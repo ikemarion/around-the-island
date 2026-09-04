@@ -14,6 +14,9 @@ var end_point := Vector3.ZERO
 var decoy_body: CharacterBody3D
 var rope: MeshInstance3D
 var gust_rings: Array[MeshInstance3D] = []
+var hot_potato_mesh: MeshInstance3D
+var hot_potato_light: OmniLight3D
+var hot_potato_hands: Array[MeshInstance3D] = []
 var label: Label3D
 var owner_player
 
@@ -119,10 +122,33 @@ func _build_visuals() -> void:
 				gust_rings.append(gust_ring)
 		&"hot_potato":
 			var ball := SphereMesh.new()
-			ball.radius = 0.25
-			ball.height = 0.5
-			_mesh(ball, Color("ff6938"), self, Vector3.UP * 1.9)
-			label.position.y = 2.5
+			ball.radius = 0.5
+			ball.height = 1.0
+			ball.radial_segments = 20
+			ball.rings = 10
+			hot_potato_mesh = _mesh(ball, Color("ff9a38"), self, Vector3(0, 0.72, 0.58))
+			hot_potato_mesh.scale = Vector3(0.68, 0.54, 0.5)
+			for spot in [Vector3(-0.16, 0.79, 0.83), Vector3(0.15, 0.63, 0.84), Vector3(0.12, 0.87, 0.81)]:
+				var dimple := SphereMesh.new()
+				dimple.radius = 0.5
+				dimple.height = 1.0
+				var dimple_mesh := _mesh(dimple, Color("713d35"), self, spot)
+				dimple_mesh.scale = Vector3(0.07, 0.05, 0.035)
+			for side in [-1.0, 1.0]:
+				var hand := SphereMesh.new()
+				hand.radius = 0.5
+				hand.height = 1.0
+				var hand_mesh := _mesh(hand, tint, self, Vector3(side * 0.31, 0.65, 0.59))
+				hand_mesh.scale = Vector3(0.23, 0.27, 0.2)
+				hot_potato_hands.append(hand_mesh)
+			hot_potato_light = OmniLight3D.new()
+			hot_potato_light.light_color = Color("ff352d")
+			hot_potato_light.light_energy = 0.0
+			hot_potato_light.omni_range = 1.5
+			hot_potato_light.shadow_enabled = false
+			add_child(hot_potato_light)
+			hot_potato_light.position = Vector3(0, 0.75, 0.62)
+			label.position = Vector3(0, 1.85, 0.1)
 		&"bungee_hook":
 			var cable := CylinderMesh.new()
 			cable.top_radius = 0.045
@@ -174,6 +200,7 @@ func _physics_process(delta: float) -> void:
 				return
 			var carrier = _players()[target_slot]
 			global_position = carrier.global_position
+			rotation.y = carrier.body_mesh.rotation.y
 			transfer_cooldown -= delta
 			if transfer_cooldown <= 0.0:
 				for slot in _players().size():
@@ -235,6 +262,8 @@ func _update_visuals() -> void:
 		label.text = "%s %.1fs" % [String(kind).replace("_", " ").to_upper(), maxf(remaining, 0.0)]
 	if kind == &"magnet_mayhem" and target_slot >= 0:
 		label.text = "P%d MAGNETIZED %.1fs" % [target_slot + 1, maxf(remaining, 0.0)]
+	if kind == &"hot_potato":
+		_update_hot_potato_visual()
 	if not gust_rings.is_empty():
 		var progress := clampf(1.0 - remaining / 0.55, 0.0, 1.0)
 		for index in gust_rings.size():
@@ -255,6 +284,28 @@ func _update_visuals() -> void:
 				right = up.cross(Vector3.RIGHT)
 			right = right.normalized()
 			rope.basis = Basis(right, up * offset.length(), right.cross(up))
+
+
+func _update_hot_potato_visual() -> void:
+	if not is_instance_valid(hot_potato_mesh):
+		return
+	var heat := clampf(1.0 - remaining / 6.0, 0.0, 1.0)
+	var elapsed := 6.0 - remaining
+	var pulse := (sin(elapsed * lerpf(3.0, 18.0, heat)) + 1.0) * 0.5
+	var potato_color := Color("ff9a38").lerp(Color("c91124"), heat)
+	var potato_material := hot_potato_mesh.material_override as StandardMaterial3D
+	potato_material.albedo_color = potato_color
+	potato_material.emission_enabled = true
+	potato_material.emission = Color("ff1018")
+	potato_material.emission_energy_multiplier = 0.05 + heat * 0.85 + pulse * heat * 0.75
+	hot_potato_mesh.scale = Vector3(0.68, 0.54, 0.5) * (1.0 + pulse * heat * 0.08)
+	if is_instance_valid(hot_potato_light):
+		hot_potato_light.light_energy = heat * 0.8 + pulse * heat * 1.5
+		hot_potato_light.omni_range = 1.5 + heat * 2.6
+	if _active(target_slot):
+		var hand_color: Color = _players()[target_slot].body_color
+		for hand in hot_potato_hands:
+			(hand.material_override as StandardMaterial3D).albedo_color = hand_color
 
 
 func network_state() -> Dictionary:

@@ -90,14 +90,19 @@ func run() -> void:
 	main.add_child(potato)
 	potato.setup(&"hot_potato", source, target)
 	potato.set_physics_process(false)
+	check(is_instance_valid(potato.hot_potato_mesh) and potato.hot_potato_hands.size() == 2, "Potato is not visibly held in two hands")
 	target.global_position = Vector3(-7.5, 0.05, 0)
 	source.global_position = target.global_position + Vector3.RIGHT
 	await physics_frame
 	await physics_frame
 	potato._physics_process(0.8)
 	check(potato.target_slot == 0, "Potato did not pass on touch")
+	potato._physics_process(4.6)
+	var heated_material := potato.hot_potato_mesh.material_override as StandardMaterial3D
+	check(heated_material.albedo_color.r > heated_material.albedo_color.g * 1.8, "Potato did not heat toward red")
+	check(potato.hot_potato_light.light_energy > 1.0, "Potato warning glow did not intensify")
 	source.velocity = Vector3.ZERO
-	potato._physics_process(6.0)
+	potato._physics_process(1.0)
 	check(potato.spent and source.velocity.length() > 0.0, "Potato did not explode with knockback")
 	await process_frame
 	# Exercise generic client reconstruction and cleanup for every new kind.
