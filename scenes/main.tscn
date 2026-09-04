@@ -1,0 +1,635 @@
+[gd_scene load_steps=39 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_networked.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/follow_camera.gd" id="3_camera"]
+[ext_resource type="Script" path="res://scripts/shoveable.gd" id="4_shoveable"]
+[ext_resource type="PackedScene" path="res://scenes/item_spawner.tscn" id="5_item_spawner"]
+[ext_resource type="PackedScene" path="res://scenes/winner_crown.tscn" id="6_crown"]
+[ext_resource type="Script" path="res://scripts/network_session.gd" id="7_network"]
+
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.16, 0.2, 0.25, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+material = SubResource("Material_floor")
+size = Vector3(18, 0.2, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(18, 0.2, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_kill_box"]
+size = Vector3(30, 1.5, 24)
+
+[sub_resource type="StandardMaterial3D" id="Material_island"]
+albedo_color = Color(0.37, 0.22, 0.14, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="Mesh_island"]
+material = SubResource("Material_island")
+size = Vector3(7.5, 0.95, 3.2)
+
+[sub_resource type="BoxShape3D" id="Shape_island"]
+size = Vector3(7.5, 0.95, 3.2)
+
+[sub_resource type="BoxShape3D" id="Shape_island_no_hop"]
+size = Vector3(7.55, 5, 3.25)
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_color = Color(0.1, 0.12, 0.16, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Mesh_wall_horizontal"]
+material = SubResource("Material_wall")
+size = Vector3(18.4, 0.7, 0.35)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_horizontal"]
+size = Vector3(18.4, 0.7, 0.35)
+
+[sub_resource type="BoxMesh" id="Mesh_wall_vertical"]
+material = SubResource("Material_wall")
+size = Vector3(0.35, 0.7, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_vertical"]
+size = Vector3(0.35, 0.7, 12)
+
+[sub_resource type="StandardMaterial3D" id="Material_chair"]
+albedo_color = Color(0.95, 0.52, 0.16, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_blue"]
+albedo_color = Color(0.2, 0.62, 0.95, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_green"]
+albedo_color = Color(0.35, 0.82, 0.48, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_pink"]
+albedo_color = Color(0.92, 0.3, 0.58, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_score_track"]
+albedo_color = Color(0.055, 0.07, 0.09, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Material_score_blue"]
+albedo_color = Color(0.31, 0.76, 0.97, 1)
+emission_enabled = true
+emission = Color(0.08, 0.4, 0.9, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_pink"]
+albedo_color = Color(1, 0.42, 0.58, 1)
+emission_enabled = true
+emission = Color(0.85, 0.08, 0.24, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_green"]
+albedo_color = Color(0.35, 0.9, 0.47, 1)
+emission_enabled = true
+emission = Color(0.03, 0.65, 0.18, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_yellow"]
+albedo_color = Color(1, 0.78, 0.2, 1)
+emission_enabled = true
+emission = Color(0.85, 0.42, 0.03, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="BoxMesh" id="Mesh_score_track"]
+material = SubResource("Material_score_track")
+size = Vector3(6.8, 0.035, 0.5)
+
+[sub_resource type="BoxMesh" id="Mesh_score_bar"]
+size = Vector3(1, 0.18, 0.38)
+
+[sub_resource type="StyleBoxFlat" id="Style_item_panel"]
+content_margin_left = 14.0
+content_margin_top = 10.0
+content_margin_right = 14.0
+content_margin_bottom = 10.0
+bg_color = Color(0.025, 0.075, 0.09, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.12, 0.95, 0.78, 0.88)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="Style_item_charge_background"]
+bg_color = Color(0.05, 0.14, 0.16, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="Style_item_charge_fill"]
+bg_color = Color(0.12, 0.95, 0.78, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="BoxMesh" id="Mesh_chair"]
+material = SubResource("Material_chair")
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_chair"]
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 1
+background_color = Color(0.055, 0.071, 0.098, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.48, 0.59, 0.78, 1)
+ambient_light_energy = 0.75
+tonemap_mode = 2
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="NetworkSession" type="Node" parent="."]
+process_mode = 3
+script = ExtResource("7_network")
+
+[node name="MatchAudio" type="AudioStreamPlayer" parent="."]
+volume_db = -3.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.872665, -0.610865, 0)
+light_color = Color(1, 0.89, 0.74, 1)
+light_energy = 1.25
+shadow_enabled = true
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 14, 14)
+current = true
+fov = 100.0
+near = 0.05
+script = ExtResource("3_camera")
+target_path = NodePath("../Players/PlayerOne")
+center_path = NodePath("../Arena/Island")
+
+[node name="Arena" type="Node3D" parent="."]
+
+[node name="PowerUpSpawner" parent="Arena" instance=ExtResource("5_item_spawner")]
+position = Vector3(-6.6, 0, 3.9)
+
+[node name="Floor" type="StaticBody3D" parent="Arena"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Floor"]
+position = Vector3(0, -0.1, 0)
+mesh = SubResource("Mesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Floor"]
+position = Vector3(0, -0.1, 0)
+shape = SubResource("Shape_floor")
+
+[node name="KillBox" type="Area3D" parent="Arena"]
+position = Vector3(0, -3.5, 0)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/KillBox"]
+shape = SubResource("Shape_kill_box")
+
+[node name="Island" type="StaticBody3D" parent="Arena"]
+position = Vector3(0, 0.475, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Island"]
+mesh = SubResource("Mesh_island")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Island"]
+shape = SubResource("Shape_island")
+
+[node name="IslandDisplay" type="Node3D" parent="Arena"]
+position = Vector3(0, 0.99, 0)
+
+[node name="ScoreTrack" type="MeshInstance3D" parent="Arena/IslandDisplay"]
+mesh = SubResource("Mesh_score_track")
+
+[node name="YouScoreBar" type="MeshInstance3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.29, 0.11, -0.57)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_blue")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="BotScoreBar" type="MeshInstance3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.29, 0.11, -0.19)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_pink")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="PlayerThreeScoreBar" type="MeshInstance3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.29, 0.11, 0.19)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_green")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="PlayerFourScoreBar" type="MeshInstance3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.29, 0.11, 0.57)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_yellow")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="WinnerCrown" parent="Arena/IslandDisplay" instance=ExtResource("6_crown")]
+visible = false
+position = Vector3(0, 0.62, 0)
+
+[node name="Countdown" type="Label3D" parent="Arena/IslandDisplay"]
+position = Vector3(0, 1.35, 0)
+billboard = 1
+text = "75"
+font_size = 220
+outline_size = 36
+
+[node name="YouLabel" type="Label3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.15, 0.27, -0.57)
+billboard = 1
+modulate = Color(0.31, 0.76, 0.97, 1)
+text = "YOU"
+font_size = 34
+outline_size = 8
+
+[node name="BotLabel" type="Label3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.15, 0.27, -0.19)
+billboard = 1
+modulate = Color(1, 0.42, 0.58, 1)
+text = "BOT"
+font_size = 34
+outline_size = 8
+
+[node name="PlayerThreeLabel" type="Label3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.15, 0.27, 0.19)
+billboard = 1
+modulate = Color(0.35, 0.9, 0.47, 1)
+text = "P3"
+font_size = 34
+outline_size = 8
+
+[node name="PlayerFourLabel" type="Label3D" parent="Arena/IslandDisplay"]
+position = Vector3(-3.15, 0.27, 0.57)
+billboard = 1
+modulate = Color(1, 0.78, 0.2, 1)
+text = "P4"
+font_size = 34
+outline_size = 8
+
+[node name="NoHopBlocker" type="StaticBody3D" parent="Arena"]
+position = Vector3(0, 2.5, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/NoHopBlocker"]
+shape = SubResource("Shape_island_no_hop")
+
+[node name="NorthWall" type="StaticBody3D" parent="Arena"]
+position = Vector3(0, 0.35, -6)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/NorthWall"]
+mesh = SubResource("Mesh_wall_horizontal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/NorthWall"]
+shape = SubResource("Shape_wall_horizontal")
+
+[node name="SouthWall" type="StaticBody3D" parent="Arena"]
+position = Vector3(0, 0.35, 6)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/SouthWall"]
+mesh = SubResource("Mesh_wall_horizontal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/SouthWall"]
+shape = SubResource("Shape_wall_horizontal")
+
+[node name="WestWall" type="StaticBody3D" parent="Arena"]
+position = Vector3(-9, 0.35, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/WestWall"]
+mesh = SubResource("Mesh_wall_vertical")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/WestWall"]
+shape = SubResource("Shape_wall_vertical")
+
+[node name="EastWall" type="StaticBody3D" parent="Arena"]
+position = Vector3(9, 0.35, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/EastWall"]
+mesh = SubResource("Mesh_wall_vertical")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/EastWall"]
+shape = SubResource("Shape_wall_vertical")
+
+[node name="Chair" type="RigidBody3D" parent="Arena" groups=["shoveable"]]
+position = Vector3(0, 0.55, -3.15)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/Chair"]
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/Chair"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleWest" type="RigidBody3D" parent="Arena" groups=["shoveable"]]
+position = Vector3(-5.8, 0.55, -2.85)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/ObstacleWest"]
+material_override = SubResource("Material_obstacle_blue")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/ObstacleWest"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleEast" type="RigidBody3D" parent="Arena" groups=["shoveable"]]
+position = Vector3(5.8, 0.55, 2.85)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/ObstacleEast"]
+material_override = SubResource("Material_obstacle_green")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/ObstacleEast"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleSouth" type="RigidBody3D" parent="Arena" groups=["shoveable"]]
+position = Vector3(0, 0.55, 3.35)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Arena/ObstacleSouth"]
+material_override = SubResource("Material_obstacle_pink")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Arena/ObstacleSouth"]
+shape = SubResource("Shape_chair")
+
+[node name="Players" type="Node3D" parent="."]
+
+[node name="PlayerOne" parent="Players" instance=ExtResource("2_player")]
+position = Vector3(-5.2, 0.05, 0)
+
+[node name="PlayerTwo" parent="Players" instance=ExtResource("2_player")]
+position = Vector3(5.2, 0.05, 0)
+
+[node name="PlayerThree" parent="Players" instance=ExtResource("2_player")]
+position = Vector3(0, 0.05, -4.6)
+
+[node name="PlayerFour" parent="Players" instance=ExtResource("2_player")]
+position = Vector3(0, 0.05, 4.6)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 240.0
+offset_top = 650.0
+offset_right = 1040.0
+offset_bottom = 700.0
+theme_override_colors/font_color = Color(0.94, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "P1 has the spark — catch them!"
+horizontal_alignment = 1
+
+[node name="Controls" type="Label" parent="HUD"]
+offset_left = 24.0
+offset_top = 92.0
+offset_right = 530.0
+offset_bottom = 244.0
+theme_override_colors/font_color = Color(0.74, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 18
+text = "MOVE: WASD / Left Stick   •   JUMP: Space / A\nCROUCH + SLIDE: Shift / L3\nGRAB: Hold E / X   •   THROW: Left Click / RT\nQUICK ITEM: Q / RB   •   STUN FIRE: M1 or Q / RB\nLOOK: Mouse / Right Stick   •   V: View\nESC: Game Menu   •   R: Reset"
+
+[node name="StunCrosshair" type="Control" parent="HUD"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -8.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Horizontal" type="ColorRect" parent="HUD/StunCrosshair"]
+layout_mode = 0
+offset_top = 7.0
+offset_right = 16.0
+offset_bottom = 9.0
+mouse_filter = 2
+color = Color(1, 0.91, 0.31, 0.95)
+
+[node name="Vertical" type="ColorRect" parent="HUD/StunCrosshair"]
+layout_mode = 0
+offset_left = 7.0
+offset_right = 9.0
+offset_bottom = 16.0
+mouse_filter = 2
+color = Color(1, 0.91, 0.31, 0.95)
+
+[node name="Center" type="ColorRect" parent="HUD/StunCrosshair"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 10.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(0.08, 0.12, 0.15, 1)
+
+[node name="QuickItemPanel" type="PanelContainer" parent="HUD"]
+offset_left = 990.0
+offset_top = 535.0
+offset_right = 1250.0
+offset_bottom = 640.0
+theme_override_styles/panel = SubResource("Style_item_panel")
+
+[node name="Margin" type="MarginContainer" parent="HUD/QuickItemPanel"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/QuickItemPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Header" type="HBoxContainer" parent="HUD/QuickItemPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Key" type="Label" parent="HUD/QuickItemPanel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.03, 0.12, 0.13, 1)
+theme_override_colors/font_shadow_color = Color(0.12, 0.95, 0.78, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 26
+text = "[Q]"
+
+[node name="Name" type="Label" parent="HUD/QuickItemPanel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 1, 0.96, 1)
+theme_override_font_sizes/font_size = 24
+text = "SLICK TRAP"
+
+[node name="Charge" type="ProgressBar" parent="HUD/QuickItemPanel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 13)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+theme_override_styles/background = SubResource("Style_item_charge_background")
+theme_override_styles/fill = SubResource("Style_item_charge_fill")
+
+[node name="State" type="Label" parent="HUD/QuickItemPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.12, 0.95, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "READY — DROP SOME CHAOS"
+horizontal_alignment = 1
+
+[node name="Lobby" type="CanvasLayer" parent="."]
+layer = 10
+process_mode = 3
+
+[node name="Shade" type="ColorRect" parent="Lobby"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.025, 0.035, 0.055, 0.96)
+mouse_filter = 0
+
+[node name="Panel" type="PanelContainer" parent="Lobby"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -220.0
+offset_right = 260.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_item_panel")
+
+[node name="Margin" type="MarginContainer" parent="Lobby/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Lobby/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "AROUND THE ISLAND"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+text = "A little chase. A lot of chaos."
+horizontal_alignment = 1
+
+[node name="Solo" type="Button" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+text = "SOLO PLAYTEST"
+
+[node name="Host" type="Button" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+text = "HOST ONLINE ROOM"
+
+[node name="Divider" type="HSeparator" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="TunnelAddress" type="LineEdit" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+placeholder_text = "Your Playit tunnel address (host PC only)"
+alignment = 1
+
+[node name="TunnelHost" type="Button" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Host through my Playit tunnel"
+
+[node name="CodeInput" type="LineEdit" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+placeholder_text = "ATI room code or IP:PORT"
+alignment = 1
+
+[node name="Join" type="Button" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+text = "JOIN ROOM"
+
+[node name="Roster" type="Label" parent="Lobby/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "YOUR ROOM · 1 / 4"
+horizontal_alignment = 1
+
+[node name="Start" type="Button" parent="Lobby/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+text = "START GAME"
+
+[node name="Progress" type="Label" parent="Lobby/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="RoomCode" type="Label" parent="Lobby/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.86, 0.3, 1)
+theme_override_font_sizes/font_size = 23
+text = ""
+horizontal_alignment = 1
+selectable = true
+
+[node name="CopyCode" type="Button" parent="Lobby/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+text = "COPY ROOM CODE"
+
+[node name="Status" type="Label" parent="Lobby/Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+text = "Choose solo, host, or enter a friend's code."
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Back" type="Button" parent="Lobby/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+text = "BACK TO MENU"

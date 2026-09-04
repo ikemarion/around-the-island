@@ -1,0 +1,61 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_pickup.gd" id="1_pickup"]
+
+[sub_resource type="StandardMaterial3D" id="Material_core"]
+albedo_color = Color(0.3, 0.9, 1, 1)
+metallic = 0.45
+roughness = 0.22
+emission_enabled = true
+emission = Color(0.05, 0.5, 1, 1)
+emission_energy_multiplier = 2.8
+
+[sub_resource type="SphereMesh" id="Mesh_core"]
+material = SubResource("Material_core")
+radius = 0.3
+height = 0.6
+radial_segments = 18
+rings = 10
+
+[sub_resource type="TorusMesh" id="Mesh_ring"]
+material = SubResource("Material_core")
+inner_radius = 0.36
+outer_radius = 0.48
+rings = 20
+ring_segments = 8
+
+[sub_resource type="BoxMesh" id="Mesh_fin"]
+material = SubResource("Material_core")
+size = Vector3(0.1, 0.1, 1.0)
+
+[sub_resource type="SphereShape3D" id="Shape_pickup"]
+radius = 0.72
+
+[node name="GenericPowerupPickup" type="Area3D"]
+position = Vector3(0, 0.82, 0)
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+script = ExtResource("1_pickup")
+
+[node name="Core" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_core")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+rotation = Vector3(1.5708, 0, 0)
+mesh = SubResource("Mesh_ring")
+
+[node name="FinA" type="MeshInstance3D" parent="."]
+mesh = SubResource("Mesh_fin")
+
+[node name="FinB" type="MeshInstance3D" parent="."]
+rotation = Vector3(0, 1.5708, 0)
+mesh = SubResource("Mesh_fin")
+
+[node name="Glow" type="OmniLight3D" parent="."]
+light_color = Color(0.3, 0.9, 1, 1)
+light_energy = 2.4
+omni_range = 2.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Shape_pickup")
