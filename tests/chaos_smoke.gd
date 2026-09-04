@@ -24,6 +24,13 @@ func run() -> void:
 	target.set_physics_process(false)
 	source.global_position = Vector3(-6, 0.05, 3)
 	target.global_position = Vector3(-6, 0.05, -3)
+	for slot in 4:
+		main.active_slots[slot] = true
+	main.players[2].global_position = Vector3(4, 0.05, 3)
+	main.players[3].global_position = Vector3(10, 0.05, -8)
+	check(source._find_farthest_active_opponent() == main.players[3], "Magnet did not select the farthest active opponent")
+	main.active_slots[2] = false
+	main.active_slots[3] = false
 	source.network_controlled = true
 	source.network_aim_forward = Vector3.FORWARD
 	var decoy = EFFECT.new()
@@ -38,14 +45,26 @@ func run() -> void:
 	await process_frame
 	var magnet = EFFECT.new()
 	main.add_child(magnet)
-	magnet.setup(&"magnet_mayhem", source)
+	magnet.setup(&"magnet_mayhem", source, target)
 	magnet.set_physics_process(false)
-	check(source.get_magnet_time() > 0.0, "Magnet second-use state missing")
+	check(source.get_magnet_time() > 0.0, "Magnet duration state missing")
 	magnet._physics_process(0.1)
-	magnet.release_magnet()
-	check(magnet.spent, "Magnet did not release")
+	check(magnet.global_position == target.global_position, "Magnet did not follow its opponent target")
+	var loose_prop: RigidBody3D = main.get_tree().get_nodes_in_group("shoveable")[0]
+	loose_prop.linear_velocity = Vector3.ZERO
+	magnet._finish_magnet()
+	check(magnet.spent, "Magnet did not expire")
+	check(loose_prop.linear_velocity == Vector3.ZERO, "Magnet fired props outward when it expired")
 	await process_frame
 	check(source.get_magnet_time() == 0.0, "Magnet state survived cleanup")
+	var gust = EFFECT.new()
+	main.add_child(gust)
+	gust.setup(&"air_horn_gust", source)
+	gust.set_physics_process(false)
+	check(gust.gust_rings.size() == 3, "Air horn gust rings were not built")
+	gust._physics_process(0.25)
+	check(gust.gust_rings[0].scale.x > 0.5, "Air horn gust did not expand")
+	gust.queue_free()
 	var wall = EFFECT.new()
 	main.add_child(wall)
 	wall.setup(&"pocket_wall", source)
@@ -82,7 +101,7 @@ func run() -> void:
 	check(potato.spent and source.velocity.length() > 0.0, "Potato did not explode with knockback")
 	await process_frame
 	# Exercise generic client reconstruction and cleanup for every new kind.
-	for kind in [&"decoy_double", &"magnet_mayhem", &"pocket_wall", &"hot_potato", &"bungee_hook"]:
+	for kind in [&"decoy_double", &"magnet_mayhem", &"pocket_wall", &"hot_potato", &"bungee_hook", &"air_horn_gust"]:
 		var effect = EFFECT.new()
 		main.add_child(effect)
 		effect.setup(kind, source, target)

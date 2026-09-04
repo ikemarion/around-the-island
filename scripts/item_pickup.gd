@@ -157,13 +157,18 @@ func _make_bell(art: Node3D, color: Color) -> void:
 
 
 func _make_air_horn(art: Node3D, color: Color) -> void:
-	var can := _cylinder(art, 0.2, 0.2, 0.54, Vector3(-0.24, -0.12, 0), color, "HornCan")
-	can.rotation.z = PI / 2.0
-	var trumpet := _cylinder(art, 0.12, 0.37, 0.52, Vector3(0.24, 0.1, 0), CREAM, "HornTrumpet")
+	_ball(art, Vector3(0.42, 0.6, 0.4), Vector3(-0.27, -0.12, 0), color, "HornCan")
+	_cylinder(art, 0.22, 0.22, 0.09, Vector3(-0.27, 0.13, 0), CREAM, "CanBand")
+	_cylinder(art, 0.18, 0.18, 0.08, Vector3(-0.27, 0.23, 0), INK, "CanCap")
+	var trumpet := _cylinder(art, 0.12, 0.36, 0.5, Vector3(0.16, 0.15, 0), Color("ffed91"), "HornTrumpet")
 	trumpet.rotation.z = PI / 2.0
-	var rim := _cylinder(art, 0.39, 0.39, 0.07, Vector3(0.51, 0.1, 0), INK, "HornRim")
+	var rim := _cylinder(art, 0.4, 0.4, 0.09, Vector3(0.43, 0.15, 0), INK, "HornRim")
 	rim.rotation.z = PI / 2.0
-	_ball(art, Vector3(0.15, 0.22, 0.18), Vector3(-0.02, 0.22, 0), INK, "HornTrigger")
+	var mouth := _cylinder(art, 0.32, 0.32, 0.025, Vector3(0.48, 0.15, 0), Color("ff744d"), "HornMouth")
+	mouth.rotation.z = PI / 2.0
+	_ball(art, Vector3(0.19, 0.2, 0.2), Vector3(-0.05, 0.31, 0), Color("ff744d"), "HornTrigger")
+	for side in [-1.0, 1.0]:
+		_ball(art, Vector3(0.07, 0.12, 0.05), Vector3(-0.27 + side * 0.09, -0.08, 0.21), INK, "HornEye")
 
 
 func _make_door(art: Node3D, color: Color) -> void:

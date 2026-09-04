@@ -249,7 +249,7 @@ func get_quick_item_name() -> String:
 
 func get_quick_item_state() -> String:
 	if get_magnet_time() > 0.0:
-		return "PULLING %.1fs — Q TO BLAST" % get_magnet_time()
+		return "FARTHEST RIVAL MAGNETIZED %.1fs" % get_magnet_time()
 	if CHAOS_NAMES.has(equipped_spawn_item):
 		return "AIM AT PLAYER + Q" if equipped_spawn_item in [&"hot_potato", &"bungee_hook"] else "USE WITH Q"
 	match equipped_spawn_item:
@@ -819,8 +819,9 @@ func _update_quick_item(chair_was_held: bool = false) -> void:
 
 	if not quick_item_just_pressed and not network_stun_fire_just_pressed:
 		return
+	# Magnet Mayhem is now a committed timed sabotage effect. Extra presses must
+	# not end it early or accidentally deploy the default slick trap underneath it.
 	if quick_item_just_pressed and is_instance_valid(magnet_effect) and not magnet_effect.spent:
-		magnet_effect.release_magnet()
 		return
 	if has_spawn_item():
 		_use_equipped_spawn_item()
@@ -870,6 +871,12 @@ func get_magnet_time() -> float:
 
 func _use_chaos_effect(kind: StringName) -> void:
 	var target = null
+	if kind == &"magnet_mayhem":
+		target = _find_farthest_active_opponent()
+		if target == null:
+			equipped_spawn_item = kind
+			quick_item_event.emit("No active opponent to magnetize — item kept.")
+			return
 	if kind in [&"hot_potato", &"bungee_hook"]:
 		var best_dot := 0.65
 		for candidate in get_tree().current_scene.players:
@@ -905,11 +912,31 @@ func _use_chaos_effect(kind: StringName) -> void:
 	get_tree().current_scene.add_child(effect)
 	effect.setup(kind, self, target)
 	_play_sfx("deploy")
-	quick_item_event.emit("%s activated!" % CHAOS_NAMES[kind])
+	if kind == &"magnet_mayhem":
+		quick_item_event.emit("MAGNET MAYHEM! P%d is attracting every loose prop." % (target.player_index + 1))
+	else:
+		quick_item_event.emit("%s activated!" % CHAOS_NAMES[kind])
+
+
+func _find_farthest_active_opponent():
+	var farthest = null
+	var farthest_distance := -1.0
+	for candidate in get_tree().current_scene.players:
+		var candidate_slot: int = candidate.player_index
+		if candidate == self or candidate_slot < 0 or candidate_slot >= get_tree().current_scene.active_slots.size() or not get_tree().current_scene.active_slots[candidate_slot]:
+			continue
+		var candidate_distance := global_position.distance_squared_to(candidate.global_position)
+		if candidate_distance > farthest_distance:
+			farthest_distance = candidate_distance
+			farthest = candidate
+	return farthest
 
 
 func _use_air_horn() -> void:
 	var forward := _get_flat_aim_direction()
+	var gust := CHAOS_EFFECT.new()
+	get_tree().current_scene.add_child(gust)
+	gust.setup(&"air_horn_gust", self)
 	var shape := SphereShape3D.new()
 	shape.radius = air_horn_range * 0.62
 	var query := PhysicsShapeQueryParameters3D.new()

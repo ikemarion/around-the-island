@@ -139,15 +139,17 @@ func make_character(player: ATIPlayer) -> void:
 	box(body,Vector3(0.15,0.055,0.025),Vector3(0,0.004,0.494),CREAM)
 
 func make_horn(parent: Node3D) -> void:
-	cylinder(parent,0.16,0.16,0.05,Vector3(0,-0.24,0),INK)
-	cylinder(parent,0.16,0.16,0.43,Vector3.ZERO,Color("4298c3"))
-	box(parent,Vector3(0.13,0.19,0.022),Vector3(0,0,0.152),CREAM)
-	cylinder(parent,0.17,0.17,0.07,Vector3(0,0.25,0),INK)
-	var bell := cylinder(parent,0.085,0.22,0.36,Vector3(0,0.31,-0.16),Color("e96643"))
+	ball(parent,Vector3(0.42,0.58,0.4),Vector3(0,-0.08,0.12),Color("4298c3"))
+	cylinder(parent,0.22,0.22,0.08,Vector3(0,0.16,0.12),CREAM)
+	cylinder(parent,0.18,0.18,0.07,Vector3(0,0.25,0.12),INK)
+	var bell := cylinder(parent,0.09,0.25,0.4,Vector3(0,0.2,-0.13),Color("ffed91"))
 	bell.rotation.x = -PI/2
-	var mouth := cylinder(parent,0.225,0.225,0.03,Vector3(0,0.31,-0.35),INK)
+	var mouth := cylinder(parent,0.27,0.27,0.05,Vector3(0,0.2,-0.35),INK)
 	mouth.rotation.x = PI/2
-	ball(parent,Vector3(0.18,0.18,0.13),Vector3(0.19,-0.07,0.12),Color("4fc3f7"))
+	var inner := cylinder(parent,0.21,0.21,0.055,Vector3(0,0.2,-0.38),Color("ff744d"))
+	inner.rotation.x = PI/2
+	ball(parent,Vector3(0.2,0.19,0.2),Vector3(0.16,0.3,0.08),Color("ff744d"))
+	for side in [-1,1]: ball(parent,Vector3(0.065,0.12,0.045),Vector3(side*0.09,-0.05,-0.09),INK)
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(horn): return

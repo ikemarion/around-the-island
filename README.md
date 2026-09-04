@@ -211,4 +211,6 @@ Online multiplayer, finished characters, multiple arenas, progression, extra ite
 - Removed the large countdown from the tabletop while retaining all four physical score bars, player labels, and the leader crown.
 - Replaced the shared generic power-up orb with ten item-specific cartoon models: air horn, swap bell, ghost, pocket watch, emergency door, decoy pair, magnet, brick wall, hot potato, and bungee hook.
 - Rounded the whole pickup set into chunky, glossy toy silhouettes; the swap bell is now a squat gold character bell with a wide lip, top button, oval eyes, and visible clapper.
+- Reworked Magnet Mayhem into remote sabotage: it automatically targets the farthest active opponent and pulls loose props toward them for five seconds, with no closing blast.
+- Rebuilt the air horn pickup and first-person model, and added a synchronized expanding gust animation to every blast.
 - Kept the stun gun's existing dedicated pickup model.
