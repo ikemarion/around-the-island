@@ -1,4 +1,4 @@
-# ATI online play — v0.26 (protocol 7)
+# ATI online play — v0.27 (protocol 7)
 
 ## One host window, one lobby
 
@@ -25,11 +25,11 @@ Normal ATI launches hold a loopback TCP window lock on port 27887. A second wind
 - A 15-second timeout means the room could be offline, full or unreachable; the message does not pretend to distinguish these cases.
 - Start requests show Starting and allow retry after five seconds without a response.
 - Maximum four players, including the host. A fifth player is not admitted.
-- The new protocol requires everyone to update. Do not mix v0.25 and v0.26.
+- Everyone must use the same current build. Do not mix v0.27 with older versions.
 
-## Current build verification caveat
+## Current online-play caveat
 
-Project/runtime tests through the real public Playit tunnel passed (host plus three clients, start, rematch, host close, new lobby and rejoin). The exported Windows EXE was blocked on this PC by Windows Smart App Control / Code Integrity. Export succeeded, but standalone execution is not certified. No security policies were disabled. Resolve trusted Windows distribution before treating this release candidate as ready for all friends.
+The exported Windows build has completed a real friend playtest and the lobby flow worked. That playtest also exposed severe latency followed by near-simultaneous guest disconnects. The cause has not yet been isolated between the game, the host connection and the Playit route. v0.27 is a visual update and does not claim to fix that networking issue.
 
 ## Developer testing
 

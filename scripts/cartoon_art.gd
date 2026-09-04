@@ -92,8 +92,6 @@ func _ready() -> void:
 	horn.position = Vector3(0.32,-0.26,-0.62)
 	horn.scale = Vector3.ONE * 0.45
 	make_horn(horn)
-	game.countdown_label.modulate = CREAM
-	game.countdown_label.outline_modulate = INK
 	for label in game.get_node("HUD").find_children("*", "Label", true, false):
 		label.add_theme_color_override("font_outline_color", INK)
 		label.add_theme_constant_override("outline_size", 4)

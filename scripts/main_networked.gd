@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 7
-const BUILD_VERSION := "0.26"
+const BUILD_VERSION := "0.27"
 const HOST_COMPUTER_NAME := "ISAACSPC"
 const DEFAULT_LOBBY_ADDRESS := "jakarta-oki.tun.ply.gg:23862"
 const STUN_BEAM_SCENE := preload("res://scenes/stun_beam.tscn")
@@ -35,7 +35,6 @@ const PLAYER_SPAWNS: Array[Vector3] = [Vector3(-5.2, 0.05, 0), Vector3(5.2, 0.05
 
 @onready var network_session = $NetworkSession
 @onready var camera: Camera3D = $Camera3D
-@onready var countdown_label: Label3D = $Arena/IslandDisplay/Countdown
 @onready var winner_crown: Node3D = $Arena/IslandDisplay/WinnerCrown
 @onready var status_label: Label = $HUD/Status
 @onready var quick_item_panel: PanelContainer = $HUD/QuickItemPanel
@@ -626,7 +625,6 @@ func _end_round() -> void:
 func _update_world_scoreboard() -> void:
 	if is_instance_valid(distant_scoreboards):
 		distant_scoreboards.refresh()
-	countdown_label.text = "%02d" % ceili(time_remaining)
 	var hud_player := players[local_slot]
 	quick_item_name.text = hud_player.get_quick_item_name()
 	quick_item_charge.value = hud_player.get_quick_item_readiness() * 100.0

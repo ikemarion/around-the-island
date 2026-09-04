@@ -205,3 +205,9 @@ Online multiplayer, finished characters, multiple arenas, progression, extra ite
 - Increased the air horn impulse from `9.5` to `15.0` for a more dramatic route-breaking blast.
 - Removed the springboard from the power-up pool and deleted its unused world-object resources.
 - Added a five-second invisibility pickup with opponent-hidden body, name, and spark marker, a countdown HUD, activation sound, and multiplayer synchronization.
+
+## Prototype 27 changes
+
+- Removed the large countdown from the tabletop while retaining all four physical score bars, player labels, and the leader crown.
+- Replaced the shared generic power-up orb with ten item-specific cartoon models: air horn, swap bell, ghost, pocket watch, emergency door, decoy pair, magnet, brick wall, hot potato, and bungee hook.
+- Kept the stun gun's existing dedicated pickup model.

@@ -244,13 +244,6 @@ mesh = SubResource("Mesh_score_bar")
 visible = false
 position = Vector3(0, 0.62, 0)
 
-[node name="Countdown" type="Label3D" parent="Arena/IslandDisplay"]
-position = Vector3(0, 1.35, 0)
-billboard = 1
-text = "75"
-font_size = 220
-outline_size = 36
-
 [node name="YouLabel" type="Label3D" parent="Arena/IslandDisplay"]
 position = Vector3(-3.15, 0.27, -0.57)
 billboard = 1

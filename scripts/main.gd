@@ -12,7 +12,6 @@ const SCORE_TRACK_LENGTH: float = 6.6
 
 @onready var player_one: ATIPlayer = $Players/PlayerOne
 @onready var player_two: ATIPlayer = $Players/PlayerTwo
-@onready var countdown_label: Label3D = $Arena/IslandDisplay/Countdown
 @onready var you_score_bar: MeshInstance3D = $Arena/IslandDisplay/YouScoreBar
 @onready var bot_score_bar: MeshInstance3D = $Arena/IslandDisplay/BotScoreBar
 @onready var winner_crown: Node3D = $Arena/IslandDisplay/WinnerCrown
@@ -125,7 +124,6 @@ func _end_round() -> void:
 
 
 func _update_world_scoreboard() -> void:
-	countdown_label.text = "%02d" % ceili(time_remaining)
 	var has_stun_gun := player_one.has_stun_gun()
 	quick_item_name.text = player_one.get_quick_item_name()
 	quick_item_charge.value = player_one.get_quick_item_readiness() * 100.0
