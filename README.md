@@ -210,4 +210,5 @@ Online multiplayer, finished characters, multiple arenas, progression, extra ite
 
 - Removed the large countdown from the tabletop while retaining all four physical score bars, player labels, and the leader crown.
 - Replaced the shared generic power-up orb with ten item-specific cartoon models: air horn, swap bell, ghost, pocket watch, emergency door, decoy pair, magnet, brick wall, hot potato, and bungee hook.
+- Rounded the whole pickup set into chunky, glossy toy silhouettes; the swap bell is now a squat gold character bell with a wide lip, top button, oval eyes, and visible clapper.
 - Kept the stun gun's existing dedicated pickup model.
