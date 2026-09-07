@@ -9,8 +9,8 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 7
-const BUILD_VERSION := "0.27"
+const PROTOCOL_VERSION := 8
+const BUILD_VERSION := "0.28"
 const HOST_COMPUTER_NAME := "ISAACSPC"
 const DEFAULT_LOBBY_ADDRESS := "jakarta-oki.tun.ply.gg:23862"
 const STUN_BEAM_SCENE := preload("res://scenes/stun_beam.tscn")
@@ -88,6 +88,11 @@ func _ready() -> void:
 	players = [$Players/PlayerOne, $Players/PlayerTwo, $Players/PlayerThree, $Players/PlayerFour]
 	score_bars = [$Arena/IslandDisplay/YouScoreBar, $Arena/IslandDisplay/BotScoreBar, $Arena/IslandDisplay/PlayerThreeScoreBar, $Arena/IslandDisplay/PlayerFourScoreBar]
 	score_labels = [$Arena/IslandDisplay/YouLabel, $Arena/IslandDisplay/BotLabel, $Arena/IslandDisplay/PlayerThreeLabel, $Arena/IslandDisplay/PlayerFourLabel]
+	# Room scenes contribute pickup locations to the existing replicated spawner.
+	# Keep a single authority-owned item source, regardless of the room count.
+	for room in $Arena/Rooms.get_children():
+		for marker in room.get_node("PickupSpawns").get_children():
+			$Arena/PowerUpSpawner.spawn_locations.append(marker.global_position)
 	for obstacle in get_tree().get_nodes_in_group("shoveable"):
 		obstacle_spawn_transforms[obstacle] = obstacle.global_transform
 	$Arena/KillBox.body_entered.connect(_on_kill_box_body_entered)

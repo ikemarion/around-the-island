@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download the newest Windows ZIP from this repository's **Releases** page, extract it, and run the included ATI executable. Everyone must use the same version.
+Download [ATI v0.28 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.28-Windows.zip), extract it, and run the included ATI executable. Everyone must use v0.28 for the expanded map.
 
 The configured host opens **Host lobby** and keeps Playit running. Friends choose **Join lobby**; no code or additional networking software is required. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the current hosting limitations and troubleshooting notes.
 
@@ -56,15 +56,19 @@ If both players merely mirror one another around the island forever, tune moveme
 - `scenes/main.tscn` — the arena, camera, lighting, players, and HUD
 - `scenes/player.tscn` — one reusable player scene
 - `scripts/player.gd` — input, acceleration, reversal commitment, gravity, and pushing
-- `scripts/main.gd` — timer, scoring, tag transfer, and round reset
+- `scripts/main_networked.gd` — timer, scoring, tag transfer, round reset, and multiplayer
 - `scripts/follow_camera.gd` — smooth world-space camera tracking for Player 1
+- `scenes/rooms/` — reusable kitchen, living room, and garage modules
+- `scripts/room_module.gd` — living-room/garage furniture, passages, and movable props, with editor previews
+- `scripts/house_navigation.gd` — floor-derived bot routes and safe emergency-door placement
+- [MAP-MODULES.md](MAP-MODULES.md) — room layout and extension instructions
 
 Suggested first experiments:
 
 1. Change `max_speed` and `reverse_acceleration` in `scripts/player.gd`.
 2. Resize the island in `scenes/main.tscn`.
 3. Move the colored obstacles to different routes.
-4. Change `TAG_COOLDOWN` and `ROUND_DURATION` in `scripts/main.gd`.
+4. Change `TAG_COOLDOWN` and `ROUND_DURATION` in `scripts/main_networked.gd`.
 
 ## Intentionally deferred
 
@@ -215,3 +219,14 @@ Online multiplayer, finished characters, multiple arenas, progression, extra ite
 - Rebuilt the air horn pickup and first-person model, and added a synchronized expanding gust animation to every blast.
 - Made Hot Potato visibly ride in the carrier's hands, heat from orange to red, pulse faster, and cast a stronger red glow as its synchronized fuse approaches detonation.
 - Kept the stun gun's existing dedicated pickup model.
+
+## Prototype 28 changes
+
+- Expanded the 18×12 kitchen into a connected 54×12 house: garage, kitchen, and living room.
+- Added two three-meter-wide passages per room connection, with themed flooring and doorway signs.
+- Living room: couch, coffee table, TV console, rug, and movable ottoman, cushion, toy, and stool.
+- Garage: project car, workbench, tool board, shutter, and movable tire, toolbox, paint can, and tool cart.
+- Extracted the kitchen into its own scene and made both new room scenes reusable, with live editor previews.
+- Added floor-derived navigation for cross-room bot chases and safe emergency-door landing positions.
+- Extended randomized pickup locations, prop reset/synchronization, and fall recovery to the full house.
+- Increased the multiplayer protocol to 8 to reject clients using the old kitchen-only geometry.

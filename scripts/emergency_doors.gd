@@ -45,7 +45,16 @@ func _on_door_entered(body: Node3D, destination: Area3D) -> void:
 		outward = Vector3.FORWARD
 	outward = outward.normalized()
 	var height := 0.05 if body is CharacterBody3D else maxf(0.45, body.global_position.y)
-	body.global_position = Vector3(destination.global_position.x, height, destination.global_position.z) + outward * exit_offset
+	var landing := Vector3(destination.global_position.x, height, destination.global_position.z) + outward * exit_offset
+	var navigation = get_tree().current_scene.get_node_or_null("Arena/HouseNavigation")
+	if navigation != null and navigation.is_navigation_ready():
+		# The outward offset can cross a wall or floor edge even when the door
+		# itself was placed safely. Resolve the actual arrival, in either direction.
+		var safe: Vector3 = navigation.nearest_safe_position(landing)
+		if not safe.is_finite():
+			return
+		landing = Vector3(safe.x, height, safe.z)
+	body.global_position = landing
 	recent_bodies[body] = 0.45
 	if body.has_method("on_emergency_door_used"):
 		body.motion_epoch += 1

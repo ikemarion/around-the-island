@@ -5,7 +5,7 @@ const BAR_WIDTH := 10.0
 var displays: Array = []
 
 func _ready() -> void:
-	for location in [Vector3(0, 9, -28), Vector3(0, 9, 28), Vector3(-32, 9, 0), Vector3(32, 9, 0)]:
+	for location in [Vector3(0, 9, -28), Vector3(0, 9, 28), Vector3(-52, 9, 0), Vector3(52, 9, 0)]:
 		var board := Node3D.new()
 		add_child(board)
 		board.position = location

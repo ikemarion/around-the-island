@@ -77,8 +77,11 @@ func _ready() -> void:
 			box(island,Vector3(1.07,0.58,0.026),Vector3(x,-0.01,side*1.617),TEAL.lightened(0.08))
 			box(island,Vector3(0.3,0.055,0.07),Vector3(x,0.19,side*1.645),CREAM)
 	for wall_name in ["NorthWall","SouthWall","EastWall","WestWall"]:
-		game.get_node("Arena/"+wall_name+"/MeshInstance3D").material_override = material(TEAL)
+		for part in game.get_node("Arena/"+wall_name).find_children("*", "MeshInstance3D", true, false):
+			part.material_override = material(TEAL)
 	for obstacle in get_tree().get_nodes_in_group("shoveable"):
+		if obstacle.has_node("CartoonProp"):
+			continue
 		obstacle.get_node("MeshInstance3D").hide()
 		var art := Node3D.new()
 		art.name = "CartoonProp"

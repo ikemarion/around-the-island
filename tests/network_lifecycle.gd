@@ -27,6 +27,10 @@ func run() -> void:
 				main.add_child(effect)
 				effect.setup(kind, main.players[0], main.players[1])
 			main.players[1].equipped_spawn_item = &"invisibility"
+			var tire = main.find_child("GarageTire", true, false)
+			check(tire != null, "Garage prop missing on host")
+			tire.freeze = true
+			tire.global_position = Vector3(-23, 0.55, 3.5)
 			while main.active_slots.count(true) > 1:
 				await create_timer(0.05, true).timeout
 			check(main.players[1].equipped_spawn_item == &"" and main.players[1].held_chair == null, "Disconnect failed cleanup")
@@ -44,6 +48,9 @@ func run() -> void:
 			check(main.local_slot == 1 and main.camera.target == main.players[1], "Wrong slot/camera after rejoin")
 			await create_timer(0.3, true).timeout
 			check(main.remote_temporary_items.size() >= 5, "Late-join effects missing")
+			check(main._sorted_obstacles().size() == 12, "Expanded room props missing on client")
+			var tire = main.find_child("GarageTire", true, false)
+			check(tire != null and tire.global_position.distance_to(Vector3(-23, 0.55, 3.5)) < 0.1, "Garage prop motion failed to replicate")
 			var event := InputEventKey.new()
 			event.physical_keycode = KEY_Q
 			event.pressed = true

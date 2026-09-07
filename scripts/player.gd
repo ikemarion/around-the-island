@@ -126,8 +126,8 @@ var body_color := Color.WHITE
 var movement_history: Array[Dictionary] = []
 var history_sample_time: float = 0.0
 
-# The first bot is intentionally tailored to this one-room prototype. These
-# bounds include player clearance around the 7.5 x 3.2 meter island.
+# Startup fallback while the modular house builds its navigation grid. These
+# bounds include player clearance around the 7.5 x 3.2 meter kitchen island.
 const ISLAND_HALF_EXTENTS := Vector2(4.18, 2.03)
 const ROUTE_CORNERS: Array[Vector2] = [
 	Vector2(-4.45, -2.3),
@@ -1029,14 +1029,23 @@ func _use_rewind_watch() -> void:
 
 
 func _deploy_emergency_doors() -> void:
-	var doors := EMERGENCY_DOORS_SCENE.instantiate()
-	get_tree().current_scene.add_child(doors)
 	var forward := _get_flat_aim_direction()
 	var entry_position := global_position + forward * 1.7
 	entry_position.y = 0.0
 	var exit_position := Vector3(-entry_position.x, 0.0, -entry_position.z)
-	exit_position.x = clampf(exit_position.x, -7.2, 7.2)
-	exit_position.z = clampf(exit_position.z, -4.7, 4.7)
+	var navigation = _house_navigation()
+	if navigation != null:
+		entry_position = navigation.nearest_safe_position(entry_position)
+		exit_position = navigation.nearest_safe_position(exit_position)
+		if not entry_position.is_finite() or not exit_position.is_finite():
+			equipped_spawn_item = &"emergency_door"
+			quick_item_event.emit("No clear floor for the doors — item kept.")
+			return
+	else:
+		exit_position.x = clampf(exit_position.x, -7.2, 7.2)
+		exit_position.z = clampf(exit_position.z, -4.7, 4.7)
+	var doors := EMERGENCY_DOORS_SCENE.instantiate()
+	get_tree().current_scene.add_child(doors)
 	doors.setup(entry_position, exit_position)
 	_play_sfx("door_open")
 	quick_item_event.emit("Emergency doors open for ten seconds — chairs fit too!")
@@ -1190,6 +1199,13 @@ func _calculate_ai_direction() -> Vector2:
 	var visible_target = _ai_visible_target()
 	if visible_target == null:
 		return Vector2.ZERO
+	var navigation = _house_navigation()
+	if navigation != null:
+		var destination: Vector3 = visible_target.global_position
+		if has_token:
+			destination = navigation.choose_flee_position(global_position, destination)
+		var waypoint: Vector3 = navigation.next_waypoint(global_position, destination)
+		return Vector2(waypoint.x - global_position.x, waypoint.z - global_position.z).normalized()
 
 	var current := Vector2(global_position.x, global_position.z)
 	var opponent := Vector2(visible_target.global_position.x, visible_target.global_position.z)
@@ -1202,6 +1218,14 @@ func _calculate_ai_direction() -> Vector2:
 
 	var next_point := _next_route_point(current, goal)
 	return (next_point - current).normalized()
+
+
+func _house_navigation():
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	var navigation = scene.get_node_or_null("Arena/HouseNavigation")
+	return navigation if navigation != null and navigation.is_navigation_ready() else null
 
 
 func _choose_flee_point(current: Vector2, opponent: Vector2) -> Vector2:

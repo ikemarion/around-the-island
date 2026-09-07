@@ -1,4 +1,4 @@
-# ATI online play — v0.27 (protocol 7)
+# ATI online play — v0.28 (protocol 8)
 
 ## One host window, one lobby
 
@@ -25,11 +25,11 @@ Normal ATI launches hold a loopback TCP window lock on port 27887. A second wind
 - A 15-second timeout means the room could be offline, full or unreachable; the message does not pretend to distinguish these cases.
 - Start requests show Starting and allow retry after five seconds without a response.
 - Maximum four players, including the host. A fifth player is not admitted.
-- Everyone must use the same current build. Do not mix v0.27 with older versions.
+- Everyone must use v0.28. Older builds use a different map and are rejected when joining.
 
 ## Current online-play caveat
 
-The exported Windows build has completed a real friend playtest and the lobby flow worked. That playtest also exposed severe latency followed by near-simultaneous guest disconnects. The cause has not yet been isolated between the game, the host connection and the Playit route. v0.27 is a visual update and does not claim to fix that networking issue.
+An earlier Windows build completed a real friend playtest and the lobby flow worked. That playtest also exposed severe latency followed by near-simultaneous guest disconnects. The cause has not yet been isolated between the game, the host connection and the Playit route. v0.28 expands the map; remote Internet latency still needs another friend playtest.
 
 ## Developer testing
 
@@ -43,4 +43,4 @@ Arguments follow the engine's -- separator. Tests launched with --script also by
 
 ## Gameplay carried forward
 
-Four first-person players, cartoon art pass, all existing power-ups, and the round-transition fixes remain. The severe-latency missed item activation in LATENCY-0.23.md is still outstanding. The requested farthest-player magnet and potato heat visuals were interrupted before implementation and are not part of this hosting build.
+Four first-person players can chase through the kitchen, living room, and garage. The power-up pool includes the farthest-opponent magnet, animated air horn gust, and the carried potato that heats to red before exploding. The severe-latency missed item activation in LATENCY-0.23.md is still outstanding.

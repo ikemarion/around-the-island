@@ -1,0 +1,352 @@
+[gd_scene load_steps=32 format=3]
+
+[ext_resource type="Script" path="res://scripts/shoveable.gd" id="4_shoveable"]
+[ext_resource type="PackedScene" path="res://scenes/item_spawner.tscn" id="5_item_spawner"]
+[ext_resource type="PackedScene" path="res://scenes/winner_crown.tscn" id="6_crown"]
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.16, 0.2, 0.25, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+material = SubResource("Material_floor")
+size = Vector3(18, 0.2, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(18, 0.2, 12)
+
+[sub_resource type="BoxShape3D" id="Shape_kill_box"]
+size = Vector3(66, 1.5, 24)
+
+[sub_resource type="StandardMaterial3D" id="Material_island"]
+albedo_color = Color(0.37, 0.22, 0.14, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="Mesh_island"]
+material = SubResource("Material_island")
+size = Vector3(7.5, 0.95, 3.2)
+
+[sub_resource type="BoxShape3D" id="Shape_island"]
+size = Vector3(7.5, 0.95, 3.2)
+
+[sub_resource type="BoxShape3D" id="Shape_island_no_hop"]
+size = Vector3(7.55, 5, 3.25)
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_color = Color(0.1, 0.12, 0.16, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Mesh_wall_horizontal"]
+material = SubResource("Material_wall")
+size = Vector3(18.4, 0.7, 0.35)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_horizontal"]
+size = Vector3(18.4, 0.7, 0.35)
+
+[sub_resource type="BoxMesh" id="Mesh_wall_vertical"]
+material = SubResource("Material_wall")
+size = Vector3(0.3, 2.3, 4)
+
+[sub_resource type="BoxShape3D" id="Shape_wall_vertical"]
+size = Vector3(0.3, 2.3, 4)
+
+[sub_resource type="StandardMaterial3D" id="Material_chair"]
+albedo_color = Color(0.95, 0.52, 0.16, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_blue"]
+albedo_color = Color(0.2, 0.62, 0.95, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_green"]
+albedo_color = Color(0.35, 0.82, 0.48, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle_pink"]
+albedo_color = Color(0.92, 0.3, 0.58, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Material_score_track"]
+albedo_color = Color(0.055, 0.07, 0.09, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Material_score_blue"]
+albedo_color = Color(0.31, 0.76, 0.97, 1)
+emission_enabled = true
+emission = Color(0.08, 0.4, 0.9, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_pink"]
+albedo_color = Color(1, 0.42, 0.58, 1)
+emission_enabled = true
+emission = Color(0.85, 0.08, 0.24, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_green"]
+albedo_color = Color(0.35, 0.9, 0.47, 1)
+emission_enabled = true
+emission = Color(0.03, 0.65, 0.18, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="Material_score_yellow"]
+albedo_color = Color(1, 0.78, 0.2, 1)
+emission_enabled = true
+emission = Color(0.85, 0.42, 0.03, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="BoxMesh" id="Mesh_score_track"]
+material = SubResource("Material_score_track")
+size = Vector3(6.8, 0.035, 0.5)
+
+[sub_resource type="BoxMesh" id="Mesh_score_bar"]
+size = Vector3(1, 0.18, 0.38)
+
+[sub_resource type="BoxMesh" id="Mesh_chair"]
+material = SubResource("Material_chair")
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="BoxShape3D" id="Shape_chair"]
+size = Vector3(0.9, 0.9, 0.9)
+
+[sub_resource type="BoxMesh" id="Mesh_door_edge"]
+material = SubResource("Material_wall")
+size = Vector3(0.3, 2.3, 1)
+
+[sub_resource type="BoxShape3D" id="Shape_door_edge"]
+size = Vector3(0.3, 2.3, 1)
+
+[node name="Kitchen" type="Node3D"]
+
+[node name="PowerUpSpawner" parent="." instance=ExtResource("5_item_spawner")]
+position = Vector3(-6.6, 0, 3.9)
+
+[node name="Floor" type="StaticBody3D" parent="." groups=["house_floor"]]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+position = Vector3(0, -0.1, 0)
+mesh = SubResource("Mesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+position = Vector3(0, -0.1, 0)
+shape = SubResource("Shape_floor")
+
+[node name="KillBox" type="Area3D" parent="."]
+position = Vector3(0, -3.5, 0)
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="KillBox"]
+shape = SubResource("Shape_kill_box")
+
+[node name="Island" type="StaticBody3D" parent="."]
+position = Vector3(0, 0.475, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Island"]
+mesh = SubResource("Mesh_island")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Island"]
+shape = SubResource("Shape_island")
+
+[node name="IslandDisplay" type="Node3D" parent="."]
+position = Vector3(0, 0.99, 0)
+
+[node name="ScoreTrack" type="MeshInstance3D" parent="IslandDisplay"]
+mesh = SubResource("Mesh_score_track")
+
+[node name="YouScoreBar" type="MeshInstance3D" parent="IslandDisplay"]
+position = Vector3(-3.29, 0.11, -0.57)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_blue")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="BotScoreBar" type="MeshInstance3D" parent="IslandDisplay"]
+position = Vector3(-3.29, 0.11, -0.19)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_pink")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="PlayerThreeScoreBar" type="MeshInstance3D" parent="IslandDisplay"]
+position = Vector3(-3.29, 0.11, 0.19)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_green")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="PlayerFourScoreBar" type="MeshInstance3D" parent="IslandDisplay"]
+position = Vector3(-3.29, 0.11, 0.57)
+scale = Vector3(0.02, 1, 1)
+material_override = SubResource("Material_score_yellow")
+mesh = SubResource("Mesh_score_bar")
+
+[node name="WinnerCrown" parent="IslandDisplay" instance=ExtResource("6_crown")]
+visible = false
+position = Vector3(0, 0.62, 0)
+
+[node name="YouLabel" type="Label3D" parent="IslandDisplay"]
+position = Vector3(-3.15, 0.27, -0.57)
+billboard = 1
+modulate = Color(0.31, 0.76, 0.97, 1)
+text = "YOU"
+font_size = 34
+outline_size = 8
+
+[node name="BotLabel" type="Label3D" parent="IslandDisplay"]
+position = Vector3(-3.15, 0.27, -0.19)
+billboard = 1
+modulate = Color(1, 0.42, 0.58, 1)
+text = "BOT"
+font_size = 34
+outline_size = 8
+
+[node name="PlayerThreeLabel" type="Label3D" parent="IslandDisplay"]
+position = Vector3(-3.15, 0.27, 0.19)
+billboard = 1
+modulate = Color(0.35, 0.9, 0.47, 1)
+text = "P3"
+font_size = 34
+outline_size = 8
+
+[node name="PlayerFourLabel" type="Label3D" parent="IslandDisplay"]
+position = Vector3(-3.15, 0.27, 0.57)
+billboard = 1
+modulate = Color(1, 0.78, 0.2, 1)
+text = "P4"
+font_size = 34
+outline_size = 8
+
+[node name="NoHopBlocker" type="StaticBody3D" parent="."]
+position = Vector3(0, 2.5, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NoHopBlocker"]
+shape = SubResource("Shape_island_no_hop")
+
+[node name="NorthWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0.35, -6)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="NorthWall"]
+mesh = SubResource("Mesh_wall_horizontal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="NorthWall"]
+shape = SubResource("Shape_wall_horizontal")
+
+[node name="SouthWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 0.35, 6)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SouthWall"]
+mesh = SubResource("Mesh_wall_horizontal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SouthWall"]
+shape = SubResource("Shape_wall_horizontal")
+
+[node name="WestWall" type="StaticBody3D" parent="."]
+position = Vector3(-8.85, 1.15, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WestWall"]
+mesh = SubResource("Mesh_wall_vertical")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WestWall"]
+shape = SubResource("Shape_wall_vertical")
+
+[node name="EastWall" type="StaticBody3D" parent="."]
+position = Vector3(8.85, 1.15, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EastWall"]
+mesh = SubResource("Mesh_wall_vertical")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EastWall"]
+shape = SubResource("Shape_wall_vertical")
+
+[node name="Chair" type="RigidBody3D" parent="." groups=["shoveable"]]
+position = Vector3(0, 0.55, -3.15)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Chair"]
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Chair"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleWest" type="RigidBody3D" parent="." groups=["shoveable"]]
+position = Vector3(-5.8, 0.55, -2.85)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ObstacleWest"]
+material_override = SubResource("Material_obstacle_blue")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ObstacleWest"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleEast" type="RigidBody3D" parent="." groups=["shoveable"]]
+position = Vector3(5.8, 0.55, 2.85)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ObstacleEast"]
+material_override = SubResource("Material_obstacle_green")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ObstacleEast"]
+shape = SubResource("Shape_chair")
+
+[node name="ObstacleSouth" type="RigidBody3D" parent="." groups=["shoveable"]]
+position = Vector3(0, 0.55, 3.35)
+mass = 0.9
+linear_damp = 3.2
+angular_damp = 5.0
+axis_lock_angular_x = true
+axis_lock_angular_z = true
+script = ExtResource("4_shoveable")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="ObstacleSouth"]
+material_override = SubResource("Material_obstacle_pink")
+mesh = SubResource("Mesh_chair")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ObstacleSouth"]
+shape = SubResource("Shape_chair")
+
+[node name="NorthEdge" type="MeshInstance3D" parent="WestWall"]
+position = Vector3(0, 0, -5.5)
+mesh = SubResource("Mesh_door_edge")
+
+[node name="NorthCollision" type="CollisionShape3D" parent="WestWall"]
+position = Vector3(0, 0, -5.5)
+shape = SubResource("Shape_door_edge")
+
+[node name="SouthEdge" type="MeshInstance3D" parent="WestWall"]
+position = Vector3(0, 0, 5.5)
+mesh = SubResource("Mesh_door_edge")
+
+[node name="SouthCollision" type="CollisionShape3D" parent="WestWall"]
+position = Vector3(0, 0, 5.5)
+shape = SubResource("Shape_door_edge")
+
+[node name="NorthEdge" type="MeshInstance3D" parent="EastWall"]
+position = Vector3(0, 0, -5.5)
+mesh = SubResource("Mesh_door_edge")
+
+[node name="NorthCollision" type="CollisionShape3D" parent="EastWall"]
+position = Vector3(0, 0, -5.5)
+shape = SubResource("Shape_door_edge")
+
+[node name="SouthEdge" type="MeshInstance3D" parent="EastWall"]
+position = Vector3(0, 0, 5.5)
+mesh = SubResource("Mesh_door_edge")
+
+[node name="SouthCollision" type="CollisionShape3D" parent="EastWall"]
+position = Vector3(0, 0, 5.5)
+shape = SubResource("Shape_door_edge")
