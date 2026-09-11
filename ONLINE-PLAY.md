@@ -1,4 +1,10 @@
-# ATI online play — v0.41 (protocol 12)
+# ATI online play — v0.42 (protocol 12)
+
+## Direct route comparison
+
+Host uses Host lobby as usual (listens on UDP 27888). Friend enables Direct connection test and enters the host's numeric IP:port, then Join direct address. This bypasses the default Playit hostname. On the same LAN use the host's local IPv4 address; across the Internet use its public IPv4 address with router UDP 27888 forwarding to the host PC and firewall permission. A private 10.x/192.168.x address will not work for a remote friend. The game does not create that forwarding or change firewall rules. Turn the test switch off for normal Playit joining.
+
+v0.42 sends newest saved reports first. Connection logs distinguish default_tunnel from custom_address, without recording the custom IP.
 
 Everyone must update to v0.41. Joining automatically shares previously unsent ATI JSON diagnostic reports with the configured host; no other files are sent. Connection reports opens the network-logs folder: reports contains your own files, received contains reports uploaded by friends. Interrupted transfers retry on the next join. The final disconnect report cannot arrive until the player reconnects.
 

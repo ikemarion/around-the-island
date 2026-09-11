@@ -1,5 +1,11 @@
 # Network reliability pass — v0.35
 
+## v0.42 direct route test preparation
+
+Lobby direct-connect toggle exposes a numeric IP:port input; normal Join remains the configured Playit endpoint. Router discovery returned no devices/usable UPnP gateway on the host PC. No mappings, firewall rules or live tunnel changes were made. Remote bypass test remains pending a direct public route; localhost validation alone cannot establish Playit as the cause.
+
+Reports now sort newest-first to prioritize the latest failures rather than older history. Direct-route join and report order are exercised by the two-instance report-transfer test.
+
 ## v0.41 automatic historical report collection
 
 Previously unsent ATI-*.json files from the local reports folder upload after successful slot assignment. The host saves content-addressed JSON in network-logs/received, with receipt events mapping peer IDs to hashes. Successful disk write is acknowledged before a client writes its sent marker. Unacknowledged reports remain local and retry on the next join. Reports received from others are never re-uploaded.

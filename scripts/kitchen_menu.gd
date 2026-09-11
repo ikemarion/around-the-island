@@ -16,6 +16,7 @@ var grid: GridContainer
 var body: BoxContainer
 var aside: VBoxContainer
 var theme_resource: Theme
+var direct_test: CheckButton
 
 func build(main: Node, existing: Dictionary) -> void:
 	game = main
@@ -103,8 +104,14 @@ func build(main: Node, existing: Dictionary) -> void:
 	home_actions = VBoxContainer.new()
 	home_actions.add_theme_constant_override("separation", 10)
 	aside.add_child(home_actions)
+	direct_test = CheckButton.new()
+	direct_test.text = "Direct connection test"
+	home_actions.add_child(direct_test)
+	direct_test.toggled.connect(func(enabled):
+		controls.CodeInput.text = ""
+		refresh())
 	_take("CodeInput", home_actions)
-	controls.CodeInput.placeholder_text = "Friend's room address or code"
+	controls.CodeInput.placeholder_text = "Host IPv4:port (e.g. 192.168.1.20:27888)"
 	_take("Host", home_actions)
 	controls.Host.text = "Host lobby"
 	_take("Join", home_actions)
@@ -141,7 +148,9 @@ func refresh() -> void:
 	var count: int = game.active_slots.count(true)
 	home_actions.visible = home
 	room_actions.visible = not home
-	controls.CodeInput.visible = false
+	controls.CodeInput.visible = direct_test.button_pressed
+	direct_test.disabled = busy or not home or game.instance_blocked
+	controls.Join.text = "Join direct address" if direct_test.button_pressed else "Join lobby"
 	controls.Join.visible = true
 	controls.Join.disabled = busy or not home or game.instance_blocked
 	controls.Host.disabled = game.instance_blocked or not game.can_host_default_lobby()
@@ -159,6 +168,8 @@ func refresh() -> void:
 	controls.Progress.visible = busy
 	room_heading.text = "Play with friends" if home else ("Connecting…" if busy else ("You are hosting" if hosting else "You joined the lobby"))
 	room_hint.text = "One host PC. Friends join its lobby. No codes or extra server windows." if home else ("You can cancel while we connect." if busy else "Anyone can start. Wait until your crew is here.")
+	if home and direct_test.button_pressed:
+		room_hint.text = "Bypass Playit with the host's IP. Same Wi-Fi/LAN: use its local IP. Remote: public IP plus router UDP 27888 forwarding is required. Host still clicks Host lobby."
 	if game.instance_blocked:
 		room_heading.text = "Already open"
 		room_hint.text = "Close this duplicate window and use the existing ATI game."

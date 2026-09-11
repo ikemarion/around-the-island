@@ -32,8 +32,9 @@ func begin() -> void:
 	var path: String = game.network_diagnostics.directory + "/reports"
 	var dir := DirAccess.open(path)
 	if dir == null: return
-	var files := dir.get_files()
-	files.sort()
+	var files: Array[String] = []
+	files.assign(dir.get_files())
+	files.sort_custom(func(a: String,b: String): return a.naturalnocasecmp_to(b)>0)
 	for name in files:
 		if name.begins_with("ATI-") and name.ends_with(".json"):
 			queue.append(path.path_join(name))

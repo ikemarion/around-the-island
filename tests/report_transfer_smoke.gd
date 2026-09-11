@@ -14,18 +14,22 @@ func run() -> void:
 		main.peer_to_slot = {1:0}
 		main.network_session.host_room(27993,false)
 	else:
+		main.network_diagnostics.export_report("older_report")
 		main.network_diagnostics.export_report("test_previous_session")
+		main.report_transfer.begin()
+		assert(JSON.parse_string(main.report_transfer.payload.get_string_from_utf8()).reason == "test_previous_session")
+		main.kitchen_menu.direct_test.button_pressed = true
 		main.code_input.text = "127.0.0.1:27993"
-		main._join_online()
+		main._join_default_lobby()
 	var deadline := Time.get_ticks_msec()+30000
 	var passed := false
 	while Time.get_ticks_msec()<deadline:
 		await create_timer(0.2,true).timeout
 		if host:
-			if DirAccess.dir_exists_absolute(dir+"/received") and DirAccess.get_files_at(dir+"/received").size()>0:
+			if DirAccess.dir_exists_absolute(dir+"/received") and DirAccess.get_files_at(dir+"/received").size()==2:
 				var files := DirAccess.get_files_at(dir+"/received")
 				var report = JSON.parse_string(FileAccess.get_file_as_string((dir+"/received").path_join(files[0])))
-				assert(report.reason == "test_previous_session")
+				assert(report.reason in ["test_previous_session","older_report"])
 				passed = true
 				await create_timer(2,true).timeout
 				break

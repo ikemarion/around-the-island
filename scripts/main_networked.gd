@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 12
-const BUILD_VERSION := "0.41"
+const BUILD_VERSION := "0.42"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -376,6 +376,13 @@ func _host_via_tunnel() -> void:
 func _join_default_lobby() -> void:
 	if instance_blocked or session_mode != &"lobby":
 		return
+	if is_instance_valid(kitchen_menu) and kitchen_menu.direct_test.button_pressed:
+		var decoded: Dictionary = network_session._decode_room_code(code_input.text.strip_edges())
+		if decoded.is_empty() or not str(decoded.address).is_valid_ip_address():
+			lobby_status.text = "For this bypass test, enter the host's numeric IP:port. Do not use the Playit address."
+			return
+		_join_online()
+		return
 	code_input.text = DEFAULT_LOBBY_ADDRESS
 	_join_online()
 
@@ -391,6 +398,7 @@ func _join_online() -> void:
 	session_mode = &"joining"
 	connection_started_ms = Time.get_ticks_msec()
 	connection_stage = "Contacting host"
+	network_diagnostics.record("connection_route",{"route":"default_tunnel" if address == DEFAULT_LOBBY_ADDRESS else "custom_address"})
 	lobby.visible = true
 	get_tree().paused = true
 	lobby_status.text = "Connecting…"
@@ -1241,7 +1249,7 @@ func _setup_menu() -> void:
 	menu_controls.Start.pressed.connect(_start_from_lobby)
 	menu_controls.Back.pressed.connect(func(): _enter_lobby("Lobby closed." if session_mode == &"hosting" else "You left the lobby."))
 	code_input.text_submitted.connect(func(_text):
-		if session_mode == &"lobby": _join_online())
+		if session_mode == &"lobby": _join_default_lobby())
 	kitchen_menu = preload("res://scripts/kitchen_menu.gd").new()
 	kitchen_menu.name = "KitchenMenu"
 	$Lobby/Panel/Margin.add_child(kitchen_menu)
