@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.39 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.39-Windows.zip), extract it, and run the included ATI executable. Both players should update to v0.39 (protocol 11) for automatic disconnect reports. Click Connection reports in the lobby or game menu to save/open local reports for sharing. Nothing uploads automatically. Includes post-match movement, confetti, ceramic score shelves with a countdown, and spark/invisibility screen effects. See [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md).
+Download [ATI v0.40 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.40-Windows.zip), extract it, and run the included ATI executable. Both players should update to v0.40 (protocol 11) for detailed transport statistics and automatic disconnect reports. This is a diagnostic build, not a confirmed disconnect fix; timeouts are unchanged. Click Connection reports in the lobby or game menu to save/open local reports for sharing. Nothing uploads automatically. Includes post-match movement, confetti, ceramic score shelves with a countdown, and spark/invisibility screen effects. See [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md).
 
 The configured host opens **Host lobby** and keeps Playit running. Friends choose **Join lobby**; no code or additional networking software is required. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the current hosting limitations and troubleshooting notes.
 

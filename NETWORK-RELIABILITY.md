@@ -1,5 +1,15 @@
 # Network reliability pass — v0.35
 
+## v0.40 transport inspection
+
+Validation: localhost host plus three clients completed 180 seconds and three host rounds; final client application RTT was 7/7/8 ms. Rejoin/remote-item lifecycle and packaged diagnostic export tests passed. The host logged a channel-0 send warning at test teardown; this is not a reproduction of the mid-match remote drop and remains a cleanup issue to investigate. No public-tunnel A/B test has been completed.
+
+- Samples direct ENet peers once per second: connection state, channel count, reliable RTT/variance, reliable loss estimate and throttle ratio. Client relayed peers are intentionally excluded.
+- Records elapsed time since the last accepted snapshot, including when no further snapshots arrive. Reports preserve the last transport sample plus recent history. ENet pending reliable queue contents and exact timeout reasons are not exposed by this API; these metrics do not conclusively identify the cause of a disconnect.
+- Teardown requests and version rejection disconnects are logged. Handshake timeout disconnects already had explicit events. Generic disconnect wording now states connection loss without blaming the host.
+- No timeout tuning, new RPCs, protocol changes or automatic uploads.
+- Existing Playit service logs found at `C:\ProgramData\playit_gg\logs\playitd.log`. Entries read included UDP reset warnings at 22:45 UTC, but none matching the 23:03 UTC v0.39 disconnect; this does not rule out a tunnel issue. File size/mtime can be stale while a process has the file open; read contents.
+
 ## v0.39 automatic reports
 
 Disconnect signals save a JSON report under `network-logs/reports`. Session exits also save a report before state resets, including intentional exits. These are observations, not a determination of why a connection ended. Connection reports buttons in the lobby and game menu save a current report and open the folder. Nothing is uploaded automatically.

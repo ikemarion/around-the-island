@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 11
-const BUILD_VERSION := "0.39"
+const BUILD_VERSION := "0.40"
 var network_diagnostics: Node
 var obstacle_last_sent: Dictionary = {}
 var restart_hold := 0.0
@@ -430,6 +430,7 @@ func _submit_version(version: int) -> void:
 		_reject_version.rpc_id(peer_id)
 		get_tree().create_timer(0.5, true).timeout.connect(func():
 			if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+				network_diagnostics.record("disconnect_requested",{"peer":peer_id,"reason":"version_mismatch"})
 				multiplayer.multiplayer_peer.disconnect_peer(peer_id))
 		return
 	_admit_player(peer_id)
@@ -1074,6 +1075,8 @@ func _cleanup_slot(slot: int) -> void:
 
 
 func _prepare_session() -> void:
+	if is_instance_valid(network_diagnostics):
+		network_diagnostics.record("session_teardown_requested",{"previous_mode":str(session_mode)})
 	celebrated_epoch = -1
 	if is_instance_valid(celebration):
 		celebration.queue_free()

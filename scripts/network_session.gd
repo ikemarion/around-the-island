@@ -214,4 +214,4 @@ func _on_connection_failed() -> void:
 
 
 func _on_server_disconnected() -> void:
-	join_failed.emit("The host closed the room.")
+	join_failed.emit("Connection to the host was lost. Open Connection reports to share diagnostics. This may be a network interruption or the host leaving.")

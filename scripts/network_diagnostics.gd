@@ -19,6 +19,25 @@ var history: Array = []
 var peer_stats: Dictionary = {}
 var last_report := ""
 var report_serial := 0
+var transport_elapsed := 0.0
+var transport_last: Dictionary = {}
+
+func sample_transport() -> void:
+	var enet = multiplayer.multiplayer_peer
+	if not enet is ENetMultiplayerPeer:
+		return
+	var snapshot := {}
+	for id in multiplayer.get_peers():
+		# Other clients are logical relayed peers, not direct ENet links.
+		if not multiplayer.is_server() and id != 1:
+			continue
+		var peer: ENetPacketPeer = enet.get_peer(id)
+		if peer == null or not peer.is_active():
+			continue
+		snapshot[id] = {"state":peer.get_state(),"channels":peer.get_channels(),"reliable_rtt_ms":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME),"reliable_rtt_variance":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME_VARIANCE),"reliable_loss_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS)/ENetPacketPeer.PACKET_LOSS_SCALE,"loss_epoch_ms":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS_EPOCH),"throttle_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_THROTTLE)/ENetPacketPeer.PACKET_THROTTLE_SCALE}
+	if not snapshot.is_empty():
+		transport_last = snapshot
+		record("transport",{"transport":snapshot,"snapshot_silence_ms":Time.get_ticks_msec()-last_snapshot_ms if last_snapshot_ms > 0 else -1})
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -60,6 +79,7 @@ func reset_session() -> void:
 		export_report("session_ended")
 	record("session_reset")
 	peer_stats.clear()
+	transport_last.clear()
 	pending.clear()
 	rtt_ms = -1
 	last_snapshot_ms = 0
@@ -77,6 +97,10 @@ func received_snapshot() -> void:
 	snapshot_count += 1
 
 func _process(delta: float) -> void:
+	transport_elapsed += delta
+	if transport_elapsed >= 1.0:
+		transport_elapsed = 0.0
+		sample_transport()
 	worst_frame_ms = maxf(worst_frame_ms,delta*1000)
 	elapsed += delta
 	probe_elapsed += delta
@@ -110,6 +134,7 @@ func _probe(id: int) -> void:
 		_reply.rpc_id(multiplayer.get_remote_sender_id(),id)
 
 func export_report(reason := "manual", peer := 0) -> String:
+	record("report_context",{"transport_last":transport_last.duplicate(true),"round_epoch":game.round_epoch,"time_remaining":game.time_remaining})
 	var reports := directory + "/reports"
 	if DirAccess.make_dir_recursive_absolute(reports) != OK:
 		push_warning("Cannot create diagnostic reports folder")

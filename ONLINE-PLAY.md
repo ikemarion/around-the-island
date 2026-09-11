@@ -1,4 +1,6 @@
-# ATI online play — v0.39 (protocol 11)
+# ATI online play — v0.40 (protocol 11)
+
+v0.40 adds one-second ENet transport statistics and snapshot-silence timing to automatic reports. Disconnect wording no longer assumes the host closed the lobby. Timeouts are unchanged. Use this build on both computers for the next diagnostic playtest.
 
 v0.39 automatically saves local diagnostic reports on disconnect/session exit. Use Connection reports in the lobby or game menu to save/open the reports folder. Ask both players to share their report; nothing is uploaded automatically.
 

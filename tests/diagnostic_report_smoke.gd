@@ -6,7 +6,7 @@ func run() -> void:
 	root.add_child(main)
 	main.set_physics_process(false)
 	var d = main.network_diagnostics
-	d.directory = "res://build/network-test/diagnostics"
+	d.directory = OS.get_environment("TEMP").path_join("ati-diagnostic-smoke")
 	d.peer_stats[123] = {"slot":1,"probes_received":7,"last_probe_unix_ms":1000}
 	d.record("test_marker")
 	main.multiplayer.peer_disconnected.emit(123)
@@ -15,7 +15,7 @@ func run() -> void:
 	assert(data.reason == "peer_disconnected" and data.peer == 123)
 	assert(data.peer_stats["123"].probes_received == 7)
 	assert(not d.peer_stats.has(123))
-	assert(data.recent_events.back().event == "peer_disconnected")
+	assert(data.recent_events[-2].event == "peer_disconnected")
 	main.multiplayer.server_disconnected.emit()
 	data = JSON.parse_string(FileAccess.get_file_as_string(d.last_report))
 	assert(data.reason == "server_disconnected")
