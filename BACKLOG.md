@@ -1,5 +1,12 @@
 # Future passes
 
+## 0.35 reliability work
+
+- Small obstacle batches, unchanged-state suppression, one-second full refresh; protocol 11.
+- Per-session JSONL connection diagnostics, application RTT and missed probes, frame stalls, snapshot gaps and prop payload counters.
+- Local multi-round four-player soak plus rejoin and dropped/stale-state regression checks. Remote Internet/Playit verification still requires the next friend session.
+- Reconnect/resume and alternative hosting remain future work, not implemented.
+
 ## 0.34 approved round-two collectibles
 
 - Coral horseshoe magnet with cream polarity caps; staggered cream/coral ceramic wall; worried tan potato with cream mitts; paired teal decoy and translucent twin.

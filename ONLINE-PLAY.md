@@ -1,4 +1,6 @@
-# ATI online play — v0.34 (protocol 10)
+# ATI online play — v0.35 (protocol 11)
+
+Everyone must update to v0.35. This build adds connection logging and reduced obstacle traffic, not a new hosting provider. See NETWORK-RELIABILITY.md for log locations and the next remote-test procedure.
 
 ## One host window, one lobby
 

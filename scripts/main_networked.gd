@@ -9,8 +9,10 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 10
-const BUILD_VERSION := "0.34"
+const PROTOCOL_VERSION := 11
+const BUILD_VERSION := "0.35"
+var network_diagnostics: Node
+var obstacle_last_sent: Dictionary = {}
 var restart_hold := 0.0
 var restart_latched := false
 var obstacle_hint: Label
@@ -84,6 +86,10 @@ var start_requested_ms := 0
 
 
 func _ready() -> void:
+	network_diagnostics = preload("res://scripts/network_diagnostics.gd").new()
+	network_diagnostics.name = "NetworkDiagnostics"
+	network_diagnostics.game = self
+	add_child(network_diagnostics)
 	var spark_indicator := preload("res://scripts/spark_indicator.gd").new()
 	spark_indicator.name = "SparkIndicator"
 	spark_indicator.game = self
@@ -154,6 +160,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	for peer_id in pending_peers.keys():
 		if Time.get_ticks_msec() - int(pending_peers[peer_id]) > 5000:
+			network_diagnostics.record("join_handshake_timeout",{"peer":peer_id})
 			pending_peers.erase(peer_id)
 			if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
 				multiplayer.multiplayer_peer.disconnect_peer(peer_id)
@@ -397,6 +404,7 @@ func _submit_version(version: int) -> void:
 		return
 	pending_peers.erase(peer_id)
 	if version != PROTOCOL_VERSION:
+		network_diagnostics.record("version_rejected",{"peer":peer_id,"protocol":version})
 		_reject_version.rpc_id(peer_id)
 		get_tree().create_timer(0.5, true).timeout.connect(func():
 			if multiplayer.multiplayer_peer is ENetMultiplayerPeer:
@@ -410,6 +418,7 @@ func _reject_version() -> void:
 	_enter_lobby("Different game versions. Everyone must download the latest ATI build.")
 
 func _on_network_error(message: String) -> void:
+	network_diagnostics.record("network_error",{"message":message})
 	_enter_lobby(message)
 
 
@@ -689,9 +698,19 @@ func _broadcast_snapshot(reliable_state := false) -> void:
 		_receive_match_state.rpc(scores, time_remaining, token_holder, spawn_state, round_running, round_epoch, snapshot_sequence)
 		for slot in MAX_PLAYERS:
 			_receive_player_state.rpc(slot, states[slot], round_epoch, snapshot_sequence)
+	var obstacle_batch: Array = []
 	for obstacle in _sorted_obstacles():
 		var state := {"name": obstacle.name, "transform": obstacle.global_transform, "linear": obstacle.linear_velocity, "angular": obstacle.angular_velocity, "holder": obstacle.holder.player_index if is_instance_valid(obstacle.holder) else -1}
-		_receive_obstacle_state.rpc(state, round_epoch, snapshot_sequence)
+		# Repeat a full keyframe each second so packet loss cannot leave a prop stale.
+		if not reliable_state and snapshot_sequence % 20 != 0 and obstacle_last_sent.get(obstacle.name) == state:
+			continue
+		if not obstacle_batch.is_empty() and var_to_bytes(obstacle_batch + [state]).size() > 900:
+			_send_obstacle_batch(obstacle_batch)
+			obstacle_batch = []
+		obstacle_batch.append(state)
+		obstacle_last_sent[obstacle.name] = state
+	if not obstacle_batch.is_empty():
+		_send_obstacle_batch(obstacle_batch)
 	var temporary := _temporary_item_states()
 	var key := str(temporary.map(func(state): return state.id))
 	if reliable_state or key != manifest_key:
@@ -700,6 +719,15 @@ func _broadcast_snapshot(reliable_state := false) -> void:
 	for state in temporary:
 		_receive_effect_state.rpc(state, round_epoch, snapshot_sequence)
 
+
+func _send_obstacle_batch(batch: Array) -> void:
+	_receive_obstacle_batch.rpc(batch,round_epoch,snapshot_sequence)
+	network_diagnostics.sent(batch)
+
+@rpc("authority","call_remote","unreliable",2)
+func _receive_obstacle_batch(batch: Array, epoch: int, sequence: int) -> void:
+	for state in batch:
+		_receive_obstacle_state(state,epoch,sequence)
 
 func _accept_epoch(epoch: int) -> bool:
 	if session_mode != &"client" or epoch < round_epoch:
@@ -753,6 +781,7 @@ func _receive_match_state(new_scores: Array, time: float, holder: int, spawn: Di
 	if not _accept_epoch(epoch) or sequence <= last_match_sequence:
 		return
 	last_match_sequence = sequence
+	network_diagnostics.received_snapshot()
 	time_remaining = time
 	token_holder = holder
 	round_running = running
@@ -1016,6 +1045,8 @@ func _cleanup_slot(slot: int) -> void:
 
 
 func _prepare_session() -> void:
+	obstacle_last_sent.clear()
+	network_diagnostics.reset_session()
 	lobby_id = ""
 	start_requested_ms = 0
 	if is_instance_valid(session_menu):

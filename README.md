@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.34 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.34-Windows.zip), extract it, and run the included ATI executable. Use v0.34 on the host and all joining PCs.
+Download [ATI v0.35 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.35-Windows.zip), extract it, and run the included ATI executable. Everyone must update to v0.35 (protocol 11). This build reduces obstacle traffic and adds connection diagnostics; see [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md).
 
 The configured host opens **Host lobby** and keeps Playit running. Friends choose **Join lobby**; no code or additional networking software is required. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the current hosting limitations and troubleshooting notes.
 
