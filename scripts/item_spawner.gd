@@ -14,7 +14,6 @@ const ITEM_POOL: Array[StringName] = [
 	&"magnet_mayhem",
 	&"pocket_wall",
 	&"hot_potato",
-	&"bungee_hook",
 ]
 const ITEM_NAMES := {
 	&"stun_gun": "STUN GUN",
@@ -31,10 +30,10 @@ const ITEM_NAMES := {
 }
 const ITEM_COLORS := {
 	&"stun_gun": Color("ffe56b"),
-	&"air_horn": Color("ff8a45"),
-	&"swap_bell": Color("57d6ff"),
-	&"invisibility": Color("a78bfa"),
-	&"rewind_watch": Color("cd78ff"),
+	&"air_horn": Color("df7856"),
+	&"swap_bell": Color("efae28"),
+	&"invisibility": Color("f6ead5"),
+	&"rewind_watch": Color("eab13e"),
 	&"emergency_door": Color("62fff0"),
 	&"decoy_double": Color("70c9ff"),
 	&"magnet_mayhem": Color("ff5dce"),
@@ -60,6 +59,7 @@ var active_pickup
 var last_location_index: int = -1
 var remote_item_type: StringName = &""
 var authority_enabled := true
+var saucer: Node3D
 
 func set_authoritative(value: bool) -> void:
 	authority_enabled = value
@@ -72,6 +72,12 @@ func set_authoritative(value: bool) -> void:
 
 
 func _ready() -> void:
+	$Pad/Mesh.hide()
+	$Pad/Ring.hide()
+	status_label.hide()
+	saucer = preload("res://scripts/spawn_saucer.gd").new()
+	saucer.name = "SpawnSaucer"
+	add_child(saucer)
 	respawn_timer.timeout.connect(_spawn_pickup)
 	_spawn_pickup()
 
@@ -94,6 +100,7 @@ func _spawn_pickup() -> void:
 	active_pickup = (STUN_GUN_PICKUP if item_type == &"stun_gun" else GENERIC_PICKUP).instantiate()
 	add_child(active_pickup)
 	active_pickup.configure(item_type, ITEM_COLORS[item_type])
+	saucer.set_available(true)
 	active_pickup.collected.connect(_on_pickup_collected)
 	status_label.text = ITEM_NAMES[item_type]
 	status_label.modulate = ITEM_COLORS[item_type]
@@ -114,6 +121,7 @@ func _move_to_random_location() -> void:
 
 
 func _on_pickup_collected() -> void:
+	saucer.set_available(false)
 	active_pickup = null
 	status_label.text = "NEW ITEM  %.0fs" % respawn_delay
 	status_label.modulate = Color(0.55, 0.6, 0.66)
@@ -135,6 +143,7 @@ func get_network_state() -> Dictionary:
 
 
 func apply_network_state(state: Dictionary) -> void:
+	saucer.set_available(bool(state.available))
 	global_position = state.position
 	var wanted_type: StringName = state.item_type
 	if not state.available:

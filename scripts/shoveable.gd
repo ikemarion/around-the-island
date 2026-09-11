@@ -31,7 +31,7 @@ func _ready() -> void:
 	grab_prompt.position = Vector3(0.0, 1.0, 0.0)
 	grab_prompt.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	grab_prompt.no_depth_test = true
-	grab_prompt.text = "[E] GRAB"
+	grab_prompt.text = "HOLD E / X: GRAB\nM1 / RT: PUSH • M2 / LT: PULL"
 	grab_prompt.font_size = 42
 	grab_prompt.outline_size = 12
 	grab_prompt.modulate = Color(1.0, 0.86, 0.2)

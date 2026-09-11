@@ -14,8 +14,8 @@ func material(color: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-	mat.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	mat.roughness = 1.0
+	mat.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
+	mat.roughness = 0.72
 	materials[key] = mat
 	return mat
 
@@ -28,16 +28,15 @@ func mesh(parent: Node3D, shape: Mesh, at: Vector3, color: Color) -> MeshInstanc
 	return node
 
 func box(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> MeshInstance3D:
-	var shape := BoxMesh.new()
-	shape.size = size
+	var shape := preload("res://scripts/cartoon_geometry.gd").rounded_box(size)
 	return mesh(parent, shape, at, color)
 
 func ball(parent: Node3D, size: Vector3, at: Vector3, color: Color) -> MeshInstance3D:
 	var shape := SphereMesh.new()
 	shape.radius = 0.5
 	shape.height = 1.0
-	shape.radial_segments = 16
-	shape.rings = 8
+	shape.radial_segments = 24
+	shape.rings = 12
 	var node := mesh(parent, shape, at, color)
 	node.scale = size
 	return node
@@ -142,6 +141,15 @@ func make_character(player: ATIPlayer) -> void:
 	box(body,Vector3(0.15,0.055,0.025),Vector3(0,0.004,0.494),CREAM)
 
 func make_horn(parent: Node3D) -> void:
+	var model := Node3D.new()
+	parent.add_child(model)
+	model.rotation.y = PI/2.0
+	model.position = Vector3(0,0,0.05)
+	var builder := preload("res://scripts/item_pickup.gd").new()
+	builder._make_air_horn(model, Color("df7856"))
+	builder.free()
+
+func _legacy_horn(parent: Node3D) -> void:
 	ball(parent,Vector3(0.42,0.58,0.4),Vector3(0,-0.08,0.12),Color("4298c3"))
 	cylinder(parent,0.22,0.22,0.08,Vector3(0,0.16,0.12),CREAM)
 	cylinder(parent,0.18,0.18,0.07,Vector3(0,0.25,0.12),INK)

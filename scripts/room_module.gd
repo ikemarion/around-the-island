@@ -58,8 +58,8 @@ func _material(color: Color) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()
 	result.albedo_color = color
 	result.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-	result.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	result.roughness = 0.85
+	result.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
+	result.roughness = 0.72
 	_materials[key] = result
 	return result
 
@@ -72,16 +72,15 @@ func _mesh(parent: Node3D, mesh: Mesh, at: Vector3, color: Color, mesh_name: Str
 	return result
 
 func _box(parent: Node3D, size: Vector3, at: Vector3, color: Color, mesh_name: String = "Panel") -> MeshInstance3D:
-	var shape := BoxMesh.new()
-	shape.size = size
+	var shape := preload("res://scripts/cartoon_geometry.gd").rounded_box(size)
 	return _mesh(parent, shape, at, color, mesh_name)
 
 func _ball(parent: Node3D, size: Vector3, at: Vector3, color: Color, mesh_name: String = "RoundDetail") -> MeshInstance3D:
 	var shape := SphereMesh.new()
 	shape.radius = 0.5
 	shape.height = 1.0
-	shape.radial_segments = 16
-	shape.rings = 8
+	shape.radial_segments = 24
+	shape.rings = 12
 	var result := _mesh(parent, shape, at, color, mesh_name)
 	result.scale = size
 	return result
@@ -209,6 +208,7 @@ func _build_living_room(parent: Node3D) -> void:
 	_ball(couch, Vector3(4.75, 1.05, 0.62), Vector3(0, 0.12, 0.55), CORAL, "SofaBack")
 	for index in 3:
 		_ball(couch, Vector3(1.45, 0.48, 1.2), Vector3(-1.48 + index * 1.48, -0.0, -0.06), Color("f09372"), "SeatCushion")
+		_ball(couch, Vector3(0.09, 0.12, 0.05), Vector3(-1.48 + index * 1.48, 0.25, 0.24), GOLD, "UpholsteryButton")
 	for side in [-1, 1]:
 		_ball(couch, Vector3(0.62, 1.05, 1.55), Vector3(side * 2.15, -0.04, 0), CORAL, "SofaArm")
 		_ball(couch, Vector3(0.72, 0.63, 0.3), Vector3(side * 1.5, 0.35, 0.23), GOLD, "ThrowPillow")
@@ -233,6 +233,7 @@ func _build_living_room(parent: Node3D) -> void:
 	_ball(cushion, Vector3(0.9, 0.62, 0.9), Vector3(0, -0.1, 0), GOLD, "Pillow")
 	_ball(cushion, Vector3(0.11, 0.035, 0.11), Vector3(0, 0.22, 0), CORAL, "Button")
 	var toy := _prop(parent, "Toy", Vector3(5.0, 0.55, -1.6))
+	_ball(toy, Vector3(0.35, 0.32, 0.1), Vector3(0, -0.13, -0.26), CREAM, "ToyBelly")
 	_ball(toy, Vector3(0.7, 0.62, 0.55), Vector3(0, -0.13, 0), TEAL, "ToyBody")
 	_ball(toy, Vector3(0.51, 0.47, 0.48), Vector3(0, 0.2, -0.06), TEAL, "ToyHead")
 	for side in [-1, 1]:
@@ -252,6 +253,8 @@ func _build_garage(parent: Node3D) -> void:
 	_ball(car, Vector3(2.6, 1.3, 2.1), Vector3(-0.25, 0.35, 0), Color("f09372"), "CarRoof")
 	for side in [-1, 1]:
 		_ball(car, Vector3(2.1, 0.74, 0.1), Vector3(-0.25, 0.41, side * 0.98), Color("b2deda"), "CarWindow")
+		_box(car, Vector3(0.08, 0.66, 0.06), Vector3(-0.25, 0.41, side * 1.04), CREAM, "WindowDivider")
+		_box(car, Vector3(0.35, 0.07, 0.08), Vector3(-0.6, -0.08, side * 1.22), CREAM, "DoorHandle")
 		for x in [-1.7, 1.7]:
 			var wheel := _cylinder(car, 0.47, 0.17, Vector3(x, -0.32, side * 1.2), INK, "Wheel")
 			wheel.rotation.x = PI / 2.0
@@ -284,6 +287,10 @@ func _build_garage(parent: Node3D) -> void:
 	tire_shape.ring_segments = 12
 	var tire_mesh := _mesh(tire, tire_shape, Vector3.ZERO, INK, "RubberTire")
 	tire_mesh.rotation.x = PI / 2.0
+	for index in 12:
+		var angle := TAU * index / 12.0
+		var tread := _box(tire, Vector3(0.12, 0.045, 0.16), Vector3(sin(angle) * 0.42, cos(angle) * 0.42, 0), Color("3a5350"), "Tread")
+		tread.rotation.z = -angle
 	var toolbox := _prop(parent, "Toolbox", Vector3(3.8, 0.55, -1.5))
 	_box(toolbox, Vector3(0.84, 0.57, 0.65), Vector3(0, -0.13, 0), CORAL, "ToolboxBody")
 	_ball(toolbox, Vector3(0.87, 0.24, 0.68), Vector3(0, 0.18, 0), Color("f09372"), "RoundedLid")

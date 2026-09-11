@@ -128,7 +128,7 @@ offset_right = 530.0
 offset_bottom = 244.0
 theme_override_colors/font_color = Color(0.74, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 18
-text = "MOVE: WASD / Left Stick   •   JUMP: Space / A\nCROUCH + SLIDE: Shift / L3\nGRAB: Hold E / X   •   THROW: Left Click / RT\nQUICK ITEM: Q / RB   •   STUN FIRE: M1 or Q / RB\nLOOK: Mouse / Right Stick   •   V: View\nESC: Game Menu   •   R: Reset"
+text = "MOVE: WASD / Left Stick   •   JUMP: Space / A\nCROUCH + SLIDE: Shift / L3\nGRAB: Hold E / X   •   SHOVE: M1 / RT\nTHROW: Hold M1 / RT, release to throw\nQUICK ITEM: Q / RB   •   STUN FIRE: M1 or Q / RB\nLOOK: Mouse / Right Stick   •   V: View\nESC: Menu   •   RESET: R / Hold Y (Triangle)"
 
 [node name="StunCrosshair" type="Control" parent="HUD"]
 visible = false

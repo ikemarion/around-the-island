@@ -55,6 +55,7 @@ func _mesh(mesh: Mesh, color: Color, parent: Node, offset := Vector3.ZERO) -> Me
 	instance.mesh = mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
+	material.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
 	material.roughness = 0.55
 	instance.material_override = material
 	parent.add_child(instance)
@@ -94,12 +95,16 @@ func _build_visuals() -> void:
 			wall.collision_layer = 1
 			wall.collision_mask = 0
 			add_child(wall)
-			var box := BoxMesh.new()
-			box.size = Vector3(2.8, 2.0, 0.3)
-			_mesh(box, Color("55b5ed"), wall, Vector3.UP)
+			var box := preload("res://scripts/cartoon_geometry.gd").rounded_box(Vector3(2.8, 2.0, 0.3))
+			_mesh(box, Color("488e85"), wall, Vector3.UP)
+			for row in 3:
+				for column in 4:
+					var tile := preload("res://scripts/cartoon_geometry.gd").rounded_box(Vector3(0.62, 0.54, 0.035))
+					for side in [-1, 1]:
+						_mesh(tile, Color("fff0c4") if (row + column) % 2 == 0 else Color("e8b45c"), wall, Vector3(-1.02 + column * 0.68, 0.38 + row * 0.62, side * 0.16))
 			var shape := CollisionShape3D.new()
 			var box_shape := BoxShape3D.new()
-			box_shape.size = box.size
+			box_shape.size = Vector3(2.8, 2.0, 0.3)
 			shape.shape = box_shape
 			shape.position.y = 1.0
 			wall.add_child(shape)

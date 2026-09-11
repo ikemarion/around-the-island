@@ -9,8 +9,11 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 8
-const BUILD_VERSION := "0.28"
+const PROTOCOL_VERSION := 10
+const BUILD_VERSION := "0.33"
+var restart_hold := 0.0
+var restart_latched := false
+var obstacle_hint: Label
 const HOST_COMPUTER_NAME := "ISAACSPC"
 const DEFAULT_LOBBY_ADDRESS := "jakarta-oki.tun.ply.gg:23862"
 const STUN_BEAM_SCENE := preload("res://scenes/stun_beam.tscn")
@@ -26,7 +29,7 @@ var effect_ids: Dictionary = {}
 var manifest_key := ""
 var local_input_sequence := 0
 var local_action_sequence := 0
-var local_buttons := [false, false, false, false, false]
+var local_buttons := [false, false, false, false, false, false]
 var last_input_send := 0
 
 const SNAPSHOT_INTERVAL := 0.05
@@ -81,6 +84,10 @@ var start_requested_ms := 0
 
 
 func _ready() -> void:
+	var spark_indicator := preload("res://scripts/spark_indicator.gd").new()
+	spark_indicator.name = "SparkIndicator"
+	spark_indicator.game = self
+	$HUD.add_child(spark_indicator)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	$Players.process_mode = Node.PROCESS_MODE_PAUSABLE
 	$Arena.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -502,7 +509,7 @@ func _receive_remote_input(movement: Vector2, aim_forward: Vector3, _jump: bool,
 	peer_input_sequences[sender] = sequence
 	var player := players[int(peer_to_slot[sender])]
 	player.input_sequence = sequence
-	player.set_network_input(movement, aim_forward, false, player.network_crouch_pressed, player.network_interact_pressed, false, false)
+	player.set_network_input(movement, aim_forward, false, player.network_crouch_pressed, player.network_interact_pressed, player.network_throw_pressed, false)
 
 
 @rpc("any_peer", "call_remote", "reliable", 0)
@@ -510,15 +517,16 @@ func _receive_action_state(sequence: int, epoch: int, buttons: Array, aim: Vecto
 	var sender := multiplayer.get_remote_sender_id()
 	if not multiplayer.is_server() or not round_running or epoch != round_epoch or not peer_to_slot.has(sender):
 		return
-	if sequence <= int(peer_action_sequences.get(sender, -1)) or buttons.size() != 5 or edges.size() > 3 or not aim.is_finite() or aim.length_squared() < 0.001:
+	if sequence <= int(peer_action_sequences.get(sender, -1)) or buttons.size() != 6 or edges.size() > 4 or not aim.is_finite() or aim.length_squared() < 0.001:
 		return
 	peer_action_sequences[sender] = sequence
 	var player := players[int(peer_to_slot[sender])]
 	player.network_aim_forward = aim.normalized()
 	player.network_crouch_pressed = bool(buttons[1])
 	player.network_interact_pressed = bool(buttons[2])
+	player.network_throw_pressed = bool(buttons[3])
 	for edge in edges:
-		if edge in ["jump", "throw", "quick"] and player.action_queue.size() < 16:
+		if edge in ["jump", "throw", "quick", "pull"] and player.action_queue.size() < 16:
 			player.action_queue.append({"kind": StringName(edge), "aim": aim.normalized()})
 
 
@@ -538,19 +546,20 @@ func _send_local_input() -> void:
 	right.y = 0.0
 	forward.y = 0.0
 	var world := right.normalized() * raw.x + forward.normalized() * -raw.y
-	var buttons := [Input.is_physical_key_pressed(KEY_SPACE), Input.is_physical_key_pressed(KEY_SHIFT), Input.is_physical_key_pressed(KEY_E), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_physical_key_pressed(KEY_Q)]
+	var buttons := [Input.is_physical_key_pressed(KEY_SPACE), Input.is_physical_key_pressed(KEY_SHIFT), Input.is_physical_key_pressed(KEY_E), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_physical_key_pressed(KEY_Q), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)]
 	if pad >= 0:
 		buttons[0] = buttons[0] or Input.is_joy_button_pressed(pad, JOY_BUTTON_A)
 		buttons[1] = buttons[1] or Input.is_joy_button_pressed(pad, JOY_BUTTON_LEFT_STICK)
 		buttons[2] = buttons[2] or Input.is_joy_button_pressed(pad, JOY_BUTTON_X)
 		buttons[3] = buttons[3] or Input.get_joy_axis(pad, JOY_AXIS_TRIGGER_RIGHT) > 0.5
 		buttons[4] = buttons[4] or Input.is_joy_button_pressed(pad, JOY_BUTTON_RIGHT_SHOULDER)
+		buttons[5] = Input.get_joy_axis(pad, JOY_AXIS_TRIGGER_LEFT) > 0.5 or buttons[5]
 	if (is_instance_valid(session_menu) and session_menu.visible) or (Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and DisplayServer.get_name() != "headless" and camera.first_person_enabled):
 		raw = Vector2.ZERO
 		world = Vector3.ZERO
-		buttons = [false, false, false, false, false]
+		buttons = [false, false, false, false, false, false]
 	var edges: Array = []
-	for entry in [[0, "jump"], [3, "throw"], [4, "quick"]]:
+	for entry in [[0, "jump"], [3, "throw"], [4, "quick"], [5, "pull"]]:
 		if buttons[entry[0]] and not local_buttons[entry[0]]:
 			edges.append(entry[1])
 	local_input_sequence += 1
@@ -986,7 +995,7 @@ func _play_match_sfx(effect_name: String) -> void:
 func _reset_input_tracking() -> void:
 	local_input_sequence = 0
 	local_action_sequence = 0
-	local_buttons = [false, false, false, false, false]
+	local_buttons = [false, false, false, false, false, false]
 	last_input_send = 0
 
 
@@ -1169,6 +1178,35 @@ func _setup_menu() -> void:
 
 
 func _process(_delta: float) -> void:
+	if not is_instance_valid(obstacle_hint):
+		obstacle_hint = Label.new()
+		$HUD.add_child(obstacle_hint)
+		obstacle_hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+		obstacle_hint.position += Vector2(-260, -100)
+		obstacle_hint.size = Vector2(520, 70)
+		obstacle_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		obstacle_hint.add_theme_font_size_override("font_size", 22)
+		obstacle_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var pads := Input.get_connected_joypads()
+	var restart_pressed := not pads.is_empty() and Input.is_joy_button_pressed(pads[0], JOY_BUTTON_Y)
+	var can_restart := session_mode in [&"solo", &"host"] and not lobby.visible and not session_menu.visible and DisplayServer.window_is_focused()
+	if restart_pressed and can_restart:
+		restart_hold += _delta
+		if restart_hold >= 1.0 and not restart_latched:
+			restart_latched = true
+			reset_round()
+	else:
+		restart_hold = 0.0
+		restart_latched = false
+	obstacle_hint.text = ""
+	if local_slot >= 0 and local_slot < players.size():
+		var p = players[local_slot]
+		if is_instance_valid(p.held_chair) or not p.remote_held_name.is_empty():
+			obstacle_hint.text = "Hold M1 / RT to charge • Release to throw\nRelease E / X to drop"
+			if p.charging_throw:
+				obstacle_hint.text = "THROW POWER  %d%%" % int(100.0 * p.throw_charge / p.throw_charge_seconds)
+	if restart_hold > 0.0:
+		obstacle_hint.text = "Hold Y / Triangle to restart: %d%%" % mini(100, int(restart_hold * 100.0))
 	if is_instance_valid(distant_scoreboards):
 		distant_scoreboards.visible = not lobby.visible
 	$HUD.visible = not lobby.visible and not session_menu.visible

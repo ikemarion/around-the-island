@@ -56,16 +56,23 @@ var remote_held_name := ""
 @export var crouching_view_height: float = 0.82
 
 @export_group("Interaction")
-@export var grab_reach: float = 3.6
+@export var grab_reach: float = 4.2
 @export var grab_minimum_aim_dot: float = 0.5
 @export var grab_hold_distance: float = 1.6
 @export var grab_hold_drop: float = 0.58
 @export var grab_spring_strength: float = 105.0
-@export var grab_spring_damping: float = 14.0
+@export var grab_spring_damping: float = 22.0
 @export var grab_maximum_force: float = 300.0
 @export var grab_break_distance: float = 4.8
 @export var chair_throw_impulse: float = 7.5
 @export var chair_throw_lift: float = 0.16
+@export var throw_charge_seconds: float = 1.0
+@export var charged_throw_multiplier: float = 2.5
+@export var obstacle_shove_impulse: float = 15.0
+var action_pull := false
+var pull_was_pressed := false
+var throw_charge := 0.0
+var charging_throw := false
 
 @export_group("Quick Item")
 @export var slippery_item_cooldown: float = 4.0
@@ -244,7 +251,7 @@ func get_quick_item_name() -> String:
 		&"invisibility": return "INVISIBILITY"
 		&"rewind_watch": return "REWIND WATCH"
 		&"emergency_door": return "EMERGENCY DOOR"
-		_: return "INVISIBLE" if is_invisible() else "SLICK TRAP"
+		_: return "INVISIBLE" if is_invisible() else "NO POWER-UP"
 
 
 func get_quick_item_state() -> String:
@@ -261,7 +268,7 @@ func get_quick_item_state() -> String:
 		&"emergency_door": return "ONE SHOT — OPEN WITH Q"
 	if is_invisible():
 		return "HIDDEN  %.1fs" % invisibility_time_remaining
-	return "READY — DROP SOME CHAOS" if quick_item_cooldown_remaining <= 0.0 else "RECHARGING  %.1fs" % quick_item_cooldown_remaining
+	return "FIND A PICKUP"
 
 
 func get_quick_item_color() -> Color:
@@ -284,7 +291,7 @@ func get_quick_item_readiness() -> float:
 		return 1.0
 	if is_invisible():
 		return clampf(invisibility_time_remaining / invisibility_duration, 0.0, 1.0)
-	return 1.0 - clampf(quick_item_cooldown_remaining / slippery_item_cooldown, 0.0, 1.0)
+	return 0.0
 
 
 func has_spawn_item() -> bool:
@@ -296,6 +303,8 @@ func has_stun_gun() -> bool:
 
 
 func try_pickup_item(item_type: StringName) -> bool:
+	if item_type in [&"bungee_hook", &"slick_trap"]:
+		return false
 	if ai_controlled or has_spawn_item():
 		return false
 	equipped_spawn_item = item_type
@@ -365,6 +374,8 @@ func reset_movement_state() -> void:
 	crouch_was_pressed = false
 	jump_was_pressed = false
 	interact_was_pressed = false
+	pull_was_pressed = false
+	action_pull = false
 	throw_was_pressed = false
 	quick_item_was_pressed = false
 	network_stun_fire_was_pressed = false
@@ -425,6 +436,7 @@ func _physics_process(delta: float) -> void:
 	action_throw = false
 	action_quick = false
 	action_aim = Vector3.ZERO
+	action_pull = false
 	if not action_queue.is_empty():
 		var queued = action_queue.pop_front()
 		var action: StringName = queued.kind if queued is Dictionary else StringName(queued)
@@ -433,6 +445,7 @@ func _physics_process(delta: float) -> void:
 		action_jump = action == &"jump"
 		action_throw = action == &"throw"
 		action_quick = action == &"quick"
+		action_pull = action == &"pull"
 	slippery_time_remaining = maxf(0.0, slippery_time_remaining - delta)
 	stun_time_remaining = maxf(0.0, stun_time_remaining - delta)
 	var was_invisible := is_invisible()
@@ -590,6 +603,8 @@ func apply_authoritative_motion(state: Dictionary) -> void:
 
 func _update_client_highlight() -> void:
 	_set_highlighted_chair(_find_grabbable_chair() if remote_held_name.is_empty() else null)
+	charging_throw = not remote_held_name.is_empty() and _is_throw_pressed()
+	throw_charge = minf(throw_charge_seconds, throw_charge + get_physics_process_delta_time()) if charging_throw else 0.0
 
 
 func _set_crouched(value: bool) -> void:
@@ -699,15 +714,22 @@ func _update_chair_interaction() -> void:
 	var throw_pressed := _is_throw_pressed()
 	var throw_just_pressed := action_throw if network_controlled else (throw_pressed and not throw_was_pressed)
 	throw_was_pressed = throw_pressed
+	var pull_pressed := not input_suspended and (Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or (joypad_id >= 0 and Input.get_joy_axis(joypad_id, JOY_AXIS_TRIGGER_LEFT) > 0.5))
+	var pull_just_pressed := action_pull if network_controlled else (pull_pressed and not pull_was_pressed)
+	pull_was_pressed = pull_pressed
 
 	if is_instance_valid(held_chair):
 		_set_highlighted_chair(null)
 		if throw_just_pressed:
+			charging_throw = true
+		if charging_throw and not throw_pressed:
 			_throw_chair()
 			return
 		if not interact_pressed or global_position.distance_to(held_chair.global_position) > grab_break_distance:
 			_release_chair()
 			return
+		if charging_throw:
+			throw_charge = minf(throw_charge_seconds, throw_charge + get_physics_process_delta_time())
 		_apply_grab_spring()
 		return
 
@@ -715,6 +737,12 @@ func _update_chair_interaction() -> void:
 	_set_highlighted_chair(candidate)
 	if interact_just_pressed and is_instance_valid(candidate):
 		_grab_chair(candidate)
+	elif throw_just_pressed and not has_stun_gun() and is_instance_valid(candidate):
+		candidate.launch((_get_aim_forward() + Vector3.UP * 0.12).normalized() * obstacle_shove_impulse)
+		_play_sfx("throw")
+	elif pull_just_pressed and is_instance_valid(candidate):
+		candidate.launch((global_position + Vector3.UP * 0.8 - candidate.global_position).normalized() * obstacle_shove_impulse)
+		_play_sfx("grab")
 
 
 func _find_grabbable_chair() -> ATIShoveable:
@@ -740,6 +768,8 @@ func _find_grabbable_chair() -> ATIShoveable:
 			continue
 
 		var score := aim_dot * 2.0 - distance * 0.12
+		if chair == highlighted_chair:
+			score += 0.15 # Prevent flickering between nearby targets.
 		if score > best_score:
 			best_score = score
 			best_chair = chair
@@ -767,6 +797,8 @@ func _grab_chair(chair: ATIShoveable) -> void:
 
 
 func _release_chair() -> void:
+	throw_charge = 0.0
+	charging_throw = false
 	if is_instance_valid(held_chair):
 		held_chair.release_claim(self)
 		remove_collision_exception_with(held_chair)
@@ -778,9 +810,10 @@ func _throw_chair() -> void:
 	if not is_instance_valid(held_chair):
 		return
 	var thrown_chair := held_chair
+	var strength := lerpf(chair_throw_impulse, chair_throw_impulse * charged_throw_multiplier, clampf(throw_charge / throw_charge_seconds, 0.0, 1.0))
 	var throw_direction := (_get_aim_forward() + Vector3.UP * chair_throw_lift).normalized()
 	_release_chair()
-	thrown_chair.apply_central_impulse(throw_direction * chair_throw_impulse)
+	thrown_chair.launch(throw_direction * strength)
 	_play_sfx("throw")
 
 
@@ -799,9 +832,17 @@ func _set_highlighted_chair(chair: ATIShoveable) -> void:
 func _apply_grab_spring() -> void:
 	var forward := _get_aim_forward()
 	var target_position := _get_aim_origin() + forward * grab_hold_distance + Vector3.DOWN * grab_hold_drop
+	# Keep the carry anchor on this side of walls instead of dragging through them.
+	var query := PhysicsRayQueryParameters3D.create(_get_aim_origin(), target_position)
+	query.exclude = [get_rid(), held_chair.get_rid()]
+	query.collision_mask = 1
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		target_position = hit.position + hit.normal * 0.65
 	var position_error := target_position - held_chair.global_position
 	var target_velocity := velocity
 	var force := position_error * grab_spring_strength + (target_velocity - held_chair.linear_velocity) * grab_spring_damping
+	force += Vector3.UP * float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)) * held_chair.mass * held_chair.gravity_scale
 	if force.length() > grab_maximum_force:
 		force = force.normalized() * grab_maximum_force
 	held_chair.apply_central_force(force)
@@ -826,14 +867,7 @@ func _update_quick_item(chair_was_held: bool = false) -> void:
 	if has_spawn_item():
 		_use_equipped_spawn_item()
 		return
-	if quick_item_cooldown_remaining > 0.0:
-		return
-
-	var patch := SLIPPERY_PATCH_SCENE.instantiate()
-	get_tree().current_scene.add_child(patch)
-	patch.global_position = Vector3(global_position.x, 0.04, global_position.z)
-	quick_item_cooldown_remaining = slippery_item_cooldown
-	_play_sfx("slick")
+	# Empty hands no longer deploy a default slick trap.
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -860,7 +894,7 @@ func _use_equipped_spawn_item() -> void:
 		&"invisibility": _use_invisibility()
 		&"rewind_watch": _use_rewind_watch()
 		&"emergency_door": _deploy_emergency_doors()
-		&"decoy_double", &"magnet_mayhem", &"pocket_wall", &"hot_potato", &"bungee_hook": _use_chaos_effect(item_type)
+		&"decoy_double", &"magnet_mayhem", &"pocket_wall", &"hot_potato": _use_chaos_effect(item_type)
 
 
 func get_magnet_time() -> float:

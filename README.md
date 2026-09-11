@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.28 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.28-Windows.zip), extract it, and run the included ATI executable. Everyone must use v0.28 for the expanded map.
+Download [ATI v0.33 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.33-Windows.zip), extract it, and run the included ATI executable. Use v0.33 on the host and all joining PCs.
 
 The configured host opens **Host lobby** and keeps Playit running. Friends choose **Join lobby**; no code or additional networking software is required. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the current hosting limitations and troubleshooting notes.
 
@@ -28,8 +28,10 @@ The Steam installation on this machine is currently Godot `4.7.2`.
 - Hold **Shift** or press the left stick to crouch.
 - Press crouch while moving quickly to begin a momentum slide.
 - Hold **E** or gamepad **X** while aiming near a highlighted chair to grip it; release to drop it.
-- While gripping a chair, press **left mouse** or the right trigger to throw it.
-- Press **Q** or the right bumper to drop a slippery patch at your feet.
+- While gripping an obstacle, hold **left mouse / RT** to charge and release to throw (up to 2.5× strength). Release **E / X** to drop. Empty-handed **M1 / RT** shoves a targeted obstacle; the stun gun keeps firing priority.
+- Host/solo players can hold **Y / Triangle** for one second to restart, or press **R**.
+- Press **M2 / LT** to pull a targeted obstacle toward you. Push and pull use the reduced v0.30.1 strength.
+- Press **Q** or the right bumper to use your collected power-up. The default slick trap and bungee hook have been removed.
 - Look with the **mouse** or **right stick**.
 - Press **V** to switch between first-person and radial views.
 - Press **Escape** for Resume / Leave Room. The match continues while this menu is open; leaving as host closes the room for everyone.

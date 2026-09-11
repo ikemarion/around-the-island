@@ -11,7 +11,7 @@ const TYPES: Array[StringName] = [
 	&"magnet_mayhem",
 	&"pocket_wall",
 	&"hot_potato",
-	&"bungee_hook",
+	&"stun_gun",
 ]
 
 

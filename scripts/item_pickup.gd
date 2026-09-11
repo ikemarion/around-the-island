@@ -15,6 +15,7 @@ var base_height: float
 var age: float = 0.0
 var claimed: bool = false
 var materials: Dictionary = {}
+const DESIGN = preload("res://scripts/collectible_design.gd")
 
 
 func configure(new_item_type: StringName, color: Color) -> void:
@@ -23,8 +24,19 @@ func configure(new_item_type: StringName, color: Color) -> void:
 		for legacy_name in ["Core", "Ring", "FinA", "FinB"]:
 			(get_node(legacy_name) as Node3D).hide()
 		_build_item_art(color)
+	elif has_node("Body"):
+		for legacy_name in ["Body", "Grip", "Charge"]:
+			get_node(legacy_name).hide()
+		_build_item_art(color)
 	if has_node("Glow"):
 		(get_node("Glow") as OmniLight3D).light_color = color
+		if item_type in [&"swap_bell", &"invisibility", &"rewind_watch", &"air_horn"]:
+			$Glow.light_color = Color("ffd68a")
+			$Glow.light_energy = 0.25
+			spin_speed = 0.65
+			bob_height = 0.09
+			base_height = 1.03
+			position.y = base_height
 
 
 func _material(color: Color) -> StandardMaterial3D:
@@ -33,10 +45,10 @@ func _material(color: Color) -> StandardMaterial3D:
 		return materials[key]
 	var result := StandardMaterial3D.new()
 	result.albedo_color = color
-	result.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+	result.diffuse_mode = BaseMaterial3D.DIFFUSE_BURLEY
 	result.specular_mode = BaseMaterial3D.SPECULAR_SCHLICK_GGX
 	result.roughness = 0.48
-	result.emission_enabled = true
+	result.emission_enabled = false
 	result.emission = color.darkened(0.58)
 	result.emission_energy_multiplier = 0.65
 	materials[key] = result
@@ -54,8 +66,7 @@ func _mesh(parent: Node3D, shape: Mesh, at: Vector3, color: Color, node_name := 
 
 
 func _box(parent: Node3D, size: Vector3, at: Vector3, color: Color, node_name := "Box") -> MeshInstance3D:
-	var shape := BoxMesh.new()
-	shape.size = size
+	var shape := preload("res://scripts/cartoon_geometry.gd").rounded_box(size)
 	return _mesh(parent, shape, at, color, node_name)
 
 
@@ -63,8 +74,8 @@ func _ball(parent: Node3D, size: Vector3, at: Vector3, color: Color, node_name :
 	var shape := SphereMesh.new()
 	shape.radius = 0.5
 	shape.height = 1.0
-	shape.radial_segments = 16
-	shape.rings = 8
+	shape.radial_segments = 24
+	shape.rings = 12
 	var result := _mesh(parent, shape, at, color, node_name)
 	result.scale = size
 	return result
@@ -108,6 +119,7 @@ func _build_item_art(color: Color) -> void:
 	art.set_meta("item_type", String(item_type))
 	add_child(art)
 	match item_type:
+		&"stun_gun": _make_stun_gun(art, color)
 		&"air_horn": _make_air_horn(art, color)
 		&"swap_bell": _make_bell(art, color)
 		&"invisibility": _make_ghost(art, color)
@@ -121,54 +133,102 @@ func _build_item_art(color: Color) -> void:
 		_: _ball(art, Vector3.ONE * 0.55, Vector3.ZERO, color, "Fallback")
 
 
-func _make_ghost(art: Node3D, color: Color) -> void:
-	_capsule(art, Vector3(0.74, 0.9, 0.5), Vector3(0, 0.02, 0), color, "GhostBody")
-	for side in [-1.0, 0.0, 1.0]:
-		_ball(art, Vector3(0.31, 0.3, 0.36), Vector3(side * 0.25, -0.42, 0), color, "GhostHem")
+func _make_stun_gun(art: Node3D, color: Color) -> void:
+	_capsule(art, Vector3(0.72, 0.32, 0.32), Vector3.ZERO, Color("488e85"), "RayBody").rotation.z = PI / 2.0
+	_box(art, Vector3(0.2, 0.37, 0.22), Vector3(-0.16, -0.23, 0), INK, "Grip")
+	for x in [0.2, 0.32, 0.44]:
+		_torus(art, 0.11, 0.17, Vector3(x, 0, 0), CREAM, "Coil").rotation.z = PI / 2.0
+	_ball(art, Vector3.ONE * 0.24, Vector3(0.5, 0, 0), color, "ChargedTip")
+	_ball(art, Vector3(0.09, 0.09, 0.04), Vector3(-0.12, 0.05, 0.17), color, "ChargeLamp")
+
+func _make_ghost(art: Node3D, _color: Color) -> void:
+	var porcelain := Color("f6ead5")
+	var sheet := _mesh(art, DESIGN.ghost_sheet(), Vector3.ZERO, porcelain, "GhostSheet")
+	sheet.material_override = DESIGN.material(porcelain,0.65)
+	for side in [-1.0,1.0]:
+		var arm := _ball(art,Vector3(0.18,0.42,0.16),Vector3(side*0.36,-0.01,0),porcelain,"GhostArm")
+		arm.rotation.z = side * -0.75
+		_ball(art,Vector3(0.095,0.235,0.045),Vector3(side*0.13,0.23,0.214),INK,"GhostEye")
+
+
+func _make_pocket_watch(art: Node3D, _color: Color) -> void:
+	var gold := DESIGN.material(Color("eab13e"),0.28)
+	gold.metallic = 0.3
+	var case_mesh := DESIGN.piece(art,"WatchCase",[Vector2(0,-0.1),Vector2(0.34,-0.1),Vector2(0.41,-0.075),Vector2(0.45,-0.02),Vector2(0.45,0.045),Vector2(0.42,0.11),Vector2(0.36,0.14),Vector2(0.33,0.13),Vector2(0.33,0.085),Vector2(0,0.085)],gold)
+	case_mesh.rotation.x = PI/2.0
+	var face := _cylinder(art,0.345,0.345,0.015,Vector3(0,0,0.1),Color("f4e6c8"),"WatchFace")
+	face.rotation.x = PI/2.0
+	for index in 12:
+		var angle := TAU * index/12.0
+		var tick := _box(art,Vector3(0.025,0.065,0.018),Vector3(sin(angle)*0.282,cos(angle)*0.282,0.118),INK,"HourTick")
+		tick.rotation.z = -angle
+	for values in [Vector2(-0.8,0.17),Vector2(0.85,0.23)]:
+		var hand := _box(art,Vector3(0.045,values.y,0.026),Vector3(-sin(values.x)*values.y*0.45,cos(values.x)*values.y*0.45,0.14),Color("377d72"),"ClockHand")
+		hand.rotation.z = values.x
+	_ball(art,Vector3(0.075,0.075,0.035),Vector3(0,0,0.16),INK,"HandPivot")
+	var crown := _cylinder(art,0.09,0.09,0.14,Vector3(0,0.46,0),Color("eab13e"),"WindingCrown")
+	crown.material_override = gold
+	for index in 10:
+		var angle := TAU * index/10.0
+		_box(art,Vector3(0.018,0.09,0.018),Vector3(sin(angle)*0.09,0.46,cos(angle)*0.09),Color("c38c28"),"CrownRidge")
+	var loop := _torus(art,0.105,0.157,Vector3(0,0.63,0),Color("377d72"),"WatchLoop")
+	loop.rotation.x = PI/2.0
+	art.rotation.z = -0.12
+
+
+func _make_bell(art: Node3D, _color: Color) -> void:
+	var design = preload("res://scripts/collectible_design.gd")
+	var gold := design.material(Color("efae28"), 0.24)
+	gold.metallic = 0.35
+	design.piece(art,"BellDome",[Vector2(0,-0.28),Vector2(0.36,-0.28),Vector2(0.395,-0.25),Vector2(0.38,-0.15),Vector2(0.35,0.04),Vector2(0.31,0.19),Vector2(0.25,0.29),Vector2(0.16,0.35),Vector2(0.06,0.38),Vector2(0,0.38)],gold)
+	design.piece(art,"BellLip",[Vector2(0.34,-0.30),Vector2(0.44,-0.31),Vector2(0.48,-0.28),Vector2(0.49,-0.24),Vector2(0.46,-0.20),Vector2(0.39,-0.18),Vector2(0.35,-0.22),Vector2(0.34,-0.30)],gold)
+	design.piece(art,"BellButton",[Vector2(0,0.39),Vector2(0.09,0.39),Vector2(0.10,0.44),Vector2(0.15,0.45),Vector2(0.17,0.48),Vector2(0.16,0.53),Vector2(0.12,0.55),Vector2(0,0.55)],gold)
 	for side in [-1.0, 1.0]:
-		_ball(art, Vector3(0.12, 0.17, 0.08), Vector3(side * 0.17, 0.22, 0.23), INK, "GhostEye")
-	_ball(art, Vector3(0.13, 0.10, 0.06), Vector3(0, 0.02, 0.24), INK, "GhostMouth")
-
-
-func _make_pocket_watch(art: Node3D, color: Color) -> void:
-	_ball(art, Vector3(0.86, 0.86, 0.25), Vector3(0, -0.05, 0), color, "WatchCase")
-	var body := _cylinder(art, 0.4, 0.4, 0.16, Vector3(0, -0.05, 0), INK, "WatchBezel")
-	body.rotation.x = PI / 2.0
-	var face := _cylinder(art, 0.33, 0.33, 0.18, Vector3(0, -0.05, 0.02), CREAM, "WatchFace")
-	face.rotation.x = PI / 2.0
-	var hand_a := _box(art, Vector3(0.045, 0.25, 0.035), Vector3(0, 0.03, 0.11), color, "MinuteHand")
-	hand_a.rotation.z = -0.55
-	var hand_b := _box(art, Vector3(0.18, 0.045, 0.035), Vector3(0.07, -0.06, 0.112), color, "HourHand")
-	hand_b.rotation.z = 0.2
-	_ball(art, Vector3(0.2, 0.18, 0.16), Vector3(0, 0.39, 0), color.lightened(0.16), "WatchCrown")
-	var loop := _torus(art, 0.105, 0.16, Vector3(0, 0.53, 0), color, "WatchLoop")
-	loop.rotation.x = PI / 2.0
-
-
-func _make_bell(art: Node3D, color: Color) -> void:
-	var gold := Color("ffd84f")
-	_ball(art, Vector3(0.82, 0.73, 0.74), Vector3(0, 0.01, 0), gold, "BellDome")
-	_cylinder(art, 0.49, 0.49, 0.15, Vector3(0, -0.3, 0), gold.darkened(0.07), "BellLip")
-	_ball(art, Vector3(0.29, 0.22, 0.29), Vector3(0, 0.48, 0), gold.lightened(0.12), "BellButton")
-	_cylinder(art, 0.17, 0.17, 0.08, Vector3(0, 0.35, 0), color, "SwapAccent")
+		var eye := _ball(art, Vector3(0.09, 0.22, 0.045), Vector3(side * 0.14, 0.055, 0.316), INK, "BellEye")
+		eye.rotation.x = -0.22
+		eye.material_override = design.material(Color("263631"),0.28)
+	var clapper := _ball(art, Vector3(0.20, 0.20, 0.20), Vector3(0, -0.34, 0), CREAM, "Clapper")
+	clapper.material_override = gold
+	art.rotation.z = -0.10
 	for side in [-1.0, 1.0]:
-		_ball(art, Vector3(0.11, 0.25, 0.06), Vector3(side * 0.18, 0.04, 0.37), INK, "BellEye")
-	_ball(art, Vector3(0.22, 0.13, 0.18), Vector3(0, -0.43, 0), CREAM, "Clapper")
+		var star := MeshInstance3D.new()
+		star.name = "Sparkle"
+		var surface := SurfaceTool.new()
+		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var points := [Vector3(0,0.12,0),Vector3(0.025,0.025,0),Vector3(0.08,0,0),Vector3(0.025,-0.025,0),Vector3(0,-0.12,0),Vector3(-0.025,-0.025,0),Vector3(-0.08,0,0),Vector3(-0.025,0.025,0)]
+		for index in 8:
+			for vertex in [Vector3.ZERO,points[index],points[(index+1)%8]]:
+				surface.add_vertex(vertex)
+		star.mesh = surface.commit()
+		var sparkle_material := design.material(Color("ffe3a0"))
+		sparkle_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		sparkle_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		sparkle_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		star.material_override = sparkle_material
+		star.position = Vector3(side * 0.59,0.24 if side > 0 else -0.07,0)
+		art.add_child(star)
 
 
-func _make_air_horn(art: Node3D, color: Color) -> void:
-	_ball(art, Vector3(0.42, 0.6, 0.4), Vector3(-0.27, -0.12, 0), color, "HornCan")
-	_cylinder(art, 0.22, 0.22, 0.09, Vector3(-0.27, 0.13, 0), CREAM, "CanBand")
-	_cylinder(art, 0.18, 0.18, 0.08, Vector3(-0.27, 0.23, 0), INK, "CanCap")
-	var trumpet := _cylinder(art, 0.12, 0.36, 0.5, Vector3(0.16, 0.15, 0), Color("ffed91"), "HornTrumpet")
-	trumpet.rotation.z = PI / 2.0
-	var rim := _cylinder(art, 0.4, 0.4, 0.09, Vector3(0.43, 0.15, 0), INK, "HornRim")
-	rim.rotation.z = PI / 2.0
-	var mouth := _cylinder(art, 0.32, 0.32, 0.025, Vector3(0.48, 0.15, 0), Color("ff744d"), "HornMouth")
-	mouth.rotation.z = PI / 2.0
-	_ball(art, Vector3(0.19, 0.2, 0.2), Vector3(-0.05, 0.31, 0), Color("ff744d"), "HornTrigger")
-	for side in [-1.0, 1.0]:
-		_ball(art, Vector3(0.07, 0.12, 0.05), Vector3(-0.27 + side * 0.09, -0.08, 0.21), INK, "HornEye")
+func _make_air_horn(art: Node3D, _color: Color) -> void:
+	var coral := Color("df7856")
+	var teal := Color("377d72")
+	var can := DESIGN.piece(art,"HornCan",[Vector2(0,-0.49),Vector2(0.16,-0.49),Vector2(0.20,-0.46),Vector2(0.215,-0.4),Vector2(0.20,0.05),Vector2(0.16,0.12),Vector2(0,0.13)],DESIGN.material(coral,0.42))
+	can.position.x = -0.22
+	for y in [-0.46,0.09]:
+		_torus(art,0.16,0.217,Vector3(-0.22,y,0),teal,"CanRim")
+	_cylinder(art,0.09,0.09,0.16,Vector3(-0.22,0.2,0),teal,"Valve")
+	_ball(art,Vector3(0.27,0.23,0.24),Vector3(-0.22,0.29,0),teal,"ValveElbow")
+	var trumpet := DESIGN.piece(art,"HornTrumpet",[Vector2(0.08,0),Vector2(0.09,0.13),Vector2(0.12,0.25),Vector2(0.20,0.40),Vector2(0.31,0.52),Vector2(0.34,0.54),Vector2(0.35,0.57),Vector2(0.33,0.59),Vector2(0.30,0.57),Vector2(0.27,0.52),Vector2(0.17,0.39),Vector2(0.09,0.23),Vector2(0.055,0.1),Vector2(0.045,0)],DESIGN.material(Color("f0dfba"),0.36))
+	trumpet.position = Vector3(-0.14,0.3,0)
+	trumpet.rotation.z = -PI/2.0
+	var band := _cylinder(art,0.13,0.13,0.10,Vector3(-0.06,0.3,0),coral,"HornCollar")
+	band.rotation.z = -PI/2.0
+	var badge := _cylinder(art,0.13,0.13,0.012,Vector3(-0.22,-0.18,0.207),CREAM,"CanBadge")
+	badge.rotation.x = PI/2.0
+	for offset in [Vector2(0.018,0),Vector2(0.055,0.035),Vector2(0.055,-0.025)]:
+		_ball(art,Vector3(0.07,0.07,0.012),Vector3(-0.22+offset.x,-0.18+offset.y,0.22),teal,"GustBadge")
+	for y in [-0.04,0.005,0.05]:
+		_box(art,Vector3(0.08,0.017,0.012),Vector3(-0.255,-0.18+y,0.221),teal,"GustLines")
 
 
 func _make_door(art: Node3D, color: Color) -> void:
