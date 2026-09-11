@@ -1,5 +1,6 @@
 extends SceneTree
 const TYPES := [&"invisibility", &"rewind_watch", &"air_horn", &"swap_bell"]
+const NEXT_TYPES := [&"magnet_mayhem", &"pocket_wall", &"hot_potato", &"decoy_double"]
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -22,7 +23,8 @@ func run() -> void:
 	main.distant_scoreboards.hide()
 	main.get_node("Arena/PowerUpSpawner").hide()
 	main.get_node("Arena/SouthWall").hide()
-	for index in TYPES.size():
+	var types := NEXT_TYPES if "--round-two" in OS.get_cmdline_user_args() else TYPES
+	for index in types.size():
 		var holder := Node3D.new()
 		main.add_child(holder)
 		holder.position = Vector3(-3.3+index*2.2,0,3.8)
@@ -31,10 +33,10 @@ func run() -> void:
 		saucer.set_available(true)
 		var pickup = load("res://scenes/generic_powerup_pickup.tscn").instantiate()
 		holder.add_child(pickup)
-		pickup.configure(TYPES[index], Color("ffd68a"))
+		pickup.configure(types[index], Color("ffd68a"))
 		pickup.set_process(false)
 		pickup.position.y = 1.07
-		pickup.rotation.y = -0.45 if TYPES[index] == &"air_horn" else 0.0
+		pickup.rotation.y = -0.45 if types[index] == &"air_horn" else 0.0
 		assert(pickup.get_node("IconArt").get_child_count() >= 3)
 		assert(pickup.get_node("Glow").light_energy <= 0.25)
 	main.camera.set_process(false)
@@ -46,6 +48,6 @@ func run() -> void:
 	await process_frame
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://build/network-test/collectible-family.png")
+		root.get_texture().get_image().save_png("res://build/network-test/collectible-round-two.png" if types == NEXT_TYPES else "res://build/network-test/collectible-family.png")
 	print("COLLECTIBLE_FAMILY passed: ghost, watch, horn, bell, warm restrained lighting")
 	quit()

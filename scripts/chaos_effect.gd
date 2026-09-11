@@ -77,10 +77,13 @@ func _build_visuals() -> void:
 			decoy_body.collision_layer = 0
 			decoy_body.collision_mask = 3 if not replica else 0
 			add_child(decoy_body)
-			var capsule := CapsuleMesh.new()
-			capsule.radius = 0.45
-			capsule.height = 1.6
-			_mesh(capsule, tint, decoy_body, Vector3.UP * 0.85)
+			var decoy_art := Node3D.new()
+			decoy_body.add_child(decoy_art)
+			decoy_art.position.y = 0.84
+			decoy_art.scale = Vector3.ONE * 1.8
+			var builder := preload("res://scripts/item_pickup.gd").new()
+			builder._make_decoy_doll(decoy_art,tint)
+			builder.free()
 			var shape := CollisionShape3D.new()
 			var capsule_shape := CapsuleShape3D.new()
 			capsule_shape.radius = 0.45
@@ -95,13 +98,13 @@ func _build_visuals() -> void:
 			wall.collision_layer = 1
 			wall.collision_mask = 0
 			add_child(wall)
-			var box := preload("res://scripts/cartoon_geometry.gd").rounded_box(Vector3(2.8, 2.0, 0.3))
-			_mesh(box, Color("488e85"), wall, Vector3.UP)
-			for row in 3:
-				for column in 4:
-					var tile := preload("res://scripts/cartoon_geometry.gd").rounded_box(Vector3(0.62, 0.54, 0.035))
-					for side in [-1, 1]:
-						_mesh(tile, Color("fff0c4") if (row + column) % 2 == 0 else Color("e8b45c"), wall, Vector3(-1.02 + column * 0.68, 0.38 + row * 0.62, side * 0.16))
+			var wall_art := Node3D.new()
+			wall.add_child(wall_art)
+			wall_art.position.y = 0.96
+			wall_art.scale = Vector3(2.66,1.96,1.03)
+			var builder := preload("res://scripts/item_pickup.gd").new()
+			builder._make_wall(wall_art, Color.WHITE)
+			builder.free()
 			var shape := CollisionShape3D.new()
 			var box_shape := BoxShape3D.new()
 			box_shape.size = Vector3(2.8, 2.0, 0.3)
@@ -147,6 +150,22 @@ func _build_visuals() -> void:
 				hand_mesh.scale = Vector3(0.23, 0.27, 0.2)
 				hot_potato_hands.append(hand_mesh)
 			hot_potato_light = OmniLight3D.new()
+			# Replace legacy shapes with the same model used by the collectible.
+			for old_part in get_children():
+				if old_part is MeshInstance3D:
+					old_part.hide()
+			var potato_art := Node3D.new()
+			potato_art.name = "PotatoArt"
+			add_child(potato_art)
+			potato_art.position = Vector3(0,0.72,0.58)
+			var builder := preload("res://scripts/item_pickup.gd").new()
+			builder._make_potato(potato_art, Color.WHITE)
+			builder.free()
+			hot_potato_mesh = potato_art.get_node("Potato")
+			hot_potato_hands.clear()
+			for part in potato_art.get_children():
+				if part.has_meta("potato_mitt"):
+					hot_potato_hands.append(part)
 			hot_potato_light.light_color = Color("ff352d")
 			hot_potato_light.light_energy = 0.0
 			hot_potato_light.omni_range = 1.5
@@ -297,18 +316,18 @@ func _update_hot_potato_visual() -> void:
 	var heat := clampf(1.0 - remaining / 6.0, 0.0, 1.0)
 	var elapsed := 6.0 - remaining
 	var pulse := (sin(elapsed * lerpf(3.0, 18.0, heat)) + 1.0) * 0.5
-	var potato_color := Color("ff9a38").lerp(Color("c91124"), heat)
+	var potato_color := Color("dba65c").lerp(Color("e33429"), heat)
 	var potato_material := hot_potato_mesh.material_override as StandardMaterial3D
 	potato_material.albedo_color = potato_color
 	potato_material.emission_enabled = true
 	potato_material.emission = Color("ff1018")
 	potato_material.emission_energy_multiplier = 0.05 + heat * 0.85 + pulse * heat * 0.75
-	hot_potato_mesh.scale = Vector3(0.68, 0.54, 0.5) * (1.0 + pulse * heat * 0.08)
+	get_node("PotatoArt").scale = Vector3.ONE * (1.0 + pulse * heat * 0.08)
 	if is_instance_valid(hot_potato_light):
 		hot_potato_light.light_energy = heat * 0.8 + pulse * heat * 1.5
 		hot_potato_light.omni_range = 1.5 + heat * 2.6
 	if _active(target_slot):
-		var hand_color: Color = _players()[target_slot].body_color
+		var hand_color: Color = Color("fff0c4")
 		for hand in hot_potato_hands:
 			(hand.material_override as StandardMaterial3D).albedo_color = hand_color
 

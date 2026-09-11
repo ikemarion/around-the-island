@@ -1,5 +1,11 @@
 # Future passes
 
+## 0.34 approved round-two collectibles
+
+- Coral horseshoe magnet with cream polarity caps; staggered cream/coral ceramic wall; worried tan potato with cream mitts; paired teal decoy and translucent twin.
+- Deployed wall and decoy reuse collectible geometry. Carried potato shares the collectible model and retains its six-second heat progression, pulsing glow, transfer and explosion logic.
+- Collision dimensions, impulse tuning, durations, and protocol 10 unchanged.
+
 ## Approved concept implementation, one piece at a time
 
 - 0.33: mockup ghost, pocket watch, and air horn completed. Continuous scalloped sheet, porcelain coloring, gold watch case with twelve ticks and raised hands, teal loop; coral/teal air horn with hollow cream trumpet and embossed gust badge. Held horn reuses pickup geometry. All four mockup collectibles use restrained warm lighting and slower float/spin. Other collectibles retain their existing designs; their materials no longer self-illuminate.

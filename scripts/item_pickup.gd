@@ -30,7 +30,7 @@ func configure(new_item_type: StringName, color: Color) -> void:
 		_build_item_art(color)
 	if has_node("Glow"):
 		(get_node("Glow") as OmniLight3D).light_color = color
-		if item_type in [&"swap_bell", &"invisibility", &"rewind_watch", &"air_horn"]:
+		if item_type != &"stun_gun":
 			$Glow.light_color = Color("ffd68a")
 			$Glow.light_energy = 0.25
 			spin_speed = 0.65
@@ -240,6 +240,30 @@ func _make_door(art: Node3D, color: Color) -> void:
 
 
 func _make_decoys(art: Node3D, color: Color) -> void:
+	var arrow := _torus(art,0.095,0.12,Vector3(0,0.48,0),Color("377d72"),"DuplicateArrow")
+	arrow.rotation.x = PI/2.0
+	for index in 2:
+		var doll := Node3D.new()
+		art.add_child(doll)
+		doll.position = Vector3(-0.22 + index*0.43,0.02+index*0.09,-index*0.16)
+		_make_decoy_doll(doll,Color("377d72") if index == 0 else Color("a0cbbb"))
+		if index == 1:
+			for part in doll.get_children():
+				if part is MeshInstance3D:
+					var mat: StandardMaterial3D = part.material_override.duplicate()
+					mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					mat.albedo_color.a = 0.5
+					part.material_override = mat
+
+func _make_decoy_doll(art: Node3D, color: Color) -> void:
+	_ball(art,Vector3(0.48,0.65,0.36),Vector3.ZERO,color,"DollBody")
+	_ball(art,Vector3(0.31,0.29,0.055),Vector3(0,0.12,0.177),CREAM,"FacePatch")
+	for side in [-1.0,1.0]:
+		_ball(art,Vector3(0.045,0.11,0.03),Vector3(side*0.075,0.13,0.207),INK,"DollEye")
+		_ball(art,Vector3(0.16,0.18,0.17),Vector3(side*0.27,-0.07,0),CREAM,"DollHand")
+		_ball(art,Vector3(0.19,0.16,0.25),Vector3(side*0.13,-0.35,0.04),INK,"DollShoe")
+
+func _legacy_decoys(art: Node3D, color: Color) -> void:
 	for side in [-1.0, 1.0]:
 		_ball(art, Vector3(0.48, 0.58, 0.38), Vector3(side * 0.24, 0, 0), color, "Decoy")
 		_ball(art, Vector3(0.09, 0.13, 0.06), Vector3(side * 0.24 - 0.09, 0.12, 0.21), INK, "DecoyEye")
@@ -251,6 +275,29 @@ func _make_decoys(art: Node3D, color: Color) -> void:
 
 
 func _make_magnet(art: Node3D, color: Color) -> void:
+	var coral := Color("df7856")
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for step in 32:
+		for ring in 16:
+			for corner in [Vector2i(step,ring),Vector2i(step+1,ring+1),Vector2i(step+1,ring),Vector2i(step,ring),Vector2i(step,ring+1),Vector2i(step+1,ring+1)]:
+				var angle: float = PI + PI * corner.x / 32.0
+				var turn: float = TAU * corner.y / 16.0
+				var normal := Vector3(cos(angle)*cos(turn),sin(angle)*cos(turn),sin(turn))
+				surface.set_normal(normal)
+				surface.add_vertex(Vector3(cos(angle)*0.29,sin(angle)*0.29-0.02,0)+normal*0.13)
+	var curve := _mesh(art,surface.commit(),Vector3.ZERO,coral,"MagnetCurve")
+	curve.material_override.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for side in [-1.0,1.0]:
+		_box(art,Vector3(0.26,0.40,0.26),Vector3(side*0.29,0.17,0),coral,"MagnetArm")
+		_box(art,Vector3(0.27,0.19,0.27),Vector3(side*0.29,0.44,0),CREAM,"PoleCap")
+		_box(art,Vector3(0.115,0.035,0.022),Vector3(side*0.29,0.44,0.144),INK,"PoleMinus")
+		if side < 0:
+			_box(art,Vector3(0.035,0.115,0.022),Vector3(side*0.29,0.44,0.145),INK,"PolePlus")
+	_ball(art,Vector3(0.30,0.075,0.025),Vector3(0,-0.32,0.131),Color("377d72"),"TealInset")
+	art.rotation.z = -0.16
+
+func _legacy_magnet(art: Node3D, color: Color) -> void:
 	for side in [-1.0, 1.0]:
 		_capsule(art, Vector3(0.27, 0.78, 0.27), Vector3(side * 0.27, 0.05, 0), color, "MagnetArm")
 		_ball(art, Vector3(0.3, 0.25, 0.3), Vector3(side * 0.27, 0.44, 0), CREAM, "MagnetPole")
@@ -260,6 +307,16 @@ func _make_magnet(art: Node3D, color: Color) -> void:
 
 
 func _make_wall(art: Node3D, color: Color) -> void:
+	_box(art,Vector3(1.05,0.12,0.29),Vector3(0,-0.43,0),Color("377d72"),"WallBase")
+	_box(art,Vector3(0.96,0.77,0.19),Vector3(0,0,0),Color("377d72"),"Mortar")
+	for row in 3:
+		var centers := [-0.25,0.25] if row % 2 == 0 else [-0.38,0.0,0.38]
+		for column in centers.size():
+			var width := 0.47 if row % 2 == 0 or column == 1 else 0.21
+			_box(art,Vector3(width,0.235,0.27),Vector3(centers[column],-0.25+row*0.25,0),Color("df7856") if (row==1 and column==0) or (row==0 and column==1) else Color("f4e6c8"),"Brick")
+	_box(art,Vector3(0.38,0.14,0.25),Vector3(0.14,0.445,0),Color("df7856"),"TopBrick")
+
+func _legacy_wall(art: Node3D, color: Color) -> void:
 	for row in 3:
 		var offset := 0.16 if row % 2 else 0.0
 		for column in 3:
@@ -270,6 +327,21 @@ func _make_wall(art: Node3D, color: Color) -> void:
 
 
 func _make_potato(art: Node3D, color: Color) -> void:
+	var body := _ball(art,Vector3(0.64,0.82,0.54),Vector3.ZERO,Color("dba65c"),"Potato")
+	body.rotation.z = -0.12
+	for side in [-1.0,1.0]:
+		_ball(art,Vector3(0.075,0.14,0.035),Vector3(side*0.105,0.14,0.263),INK,"PotatoEye")
+		var mitt := _ball(art,Vector3(0.20,0.24,0.19),Vector3(side*0.34,-0.09,0.09),CREAM,"OvenMitt")
+		mitt.set_meta("potato_mitt",true)
+		for line in 3:
+			_box(art,Vector3(0.013,0.07,0.012),Vector3(side*0.34-0.04+line*0.035,-0.10,0.186),Color("377d72"),"MittStitch")
+	for side in [-1.0,1.0]:
+		var mouth := _capsule(art,Vector3(0.035,0.105,0.028),Vector3(side*0.037,-0.025,0.273),INK,"WorriedMouth")
+		mouth.rotation.z = side*0.95
+	for spot in [Vector3(-0.19,0.27,0.18),Vector3(0.19,-0.23,0.19),Vector3(-0.17,-0.27,0.15),Vector3(0.16,0.32,0.12)]:
+		_ball(art,Vector3(0.075,0.055,0.015),spot,Color("af793e"),"Dimple")
+
+func _legacy_potato(art: Node3D, color: Color) -> void:
 	var potato := _ball(art, Vector3(0.86, 0.64, 0.54), Vector3(0, -0.06, 0), color, "Potato")
 	potato.rotation.z = -0.18
 	for spot in [Vector3(-0.2, 0.08, 0.27), Vector3(0.19, -0.13, 0.27), Vector3(0.15, 0.19, 0.24)]:

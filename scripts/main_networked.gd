@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 10
-const BUILD_VERSION := "0.33"
+const BUILD_VERSION := "0.34"
 var restart_hold := 0.0
 var restart_latched := false
 var obstacle_hint: Label

@@ -1,4 +1,4 @@
-# ATI online play — v0.33 (protocol 10)
+# ATI online play — v0.34 (protocol 10)
 
 ## One host window, one lobby
 
