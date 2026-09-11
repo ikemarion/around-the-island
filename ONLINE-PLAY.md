@@ -1,6 +1,8 @@
-# ATI online play — v0.35 (protocol 11)
+# ATI online play — v0.38 (protocol 11)
 
-Everyone must update to v0.35. This build adds connection logging and reduced obstacle traffic, not a new hosting provider. See NETWORK-RELIABILITY.md for log locations and the next remote-test procedure.
+Update everyone to v0.38 for post-match free movement and confetti/winner announcements. Scores freeze at the buzzer; the host can restart when ready. Older clients do not support post-match movement.
+
+Use v0.37 for the latest visuals: ceramic floating score shelves, a gold spark vignette and a local-only invisibility shimmer. Gameplay keybind overlays and obstacle instructions are hidden. Protocol 11 and the v0.35 connection logging and reduced obstacle traffic are unchanged. See NETWORK-RELIABILITY.md for log locations and the next remote-test procedure.
 
 ## One host window, one lobby
 

@@ -1,5 +1,23 @@
 # Future passes
 
+## 0.38 post-match celebration
+
+- Players keep moving and interacting after the buzzer, including remote input/prediction and fall respawns. Scores and spark transfers stop.
+- Local confetti and winner/tie announcement trigger once per round on each peer. Restart and lobby cleanup remove the overlay.
+- Regression covers actual movement, frozen scores, respawn, client snapshot handling, duplicate celebration suppression, restart and lobby boundaries.
+
+## 0.37 floating ceramic score shelves
+
+- Four world-space displays now use cream ceramic shelves, teal scallops, gold trim, rounded vertical player-colored columns, score labels, player badges and spinning leader crowns.
+- Fixed score scale preserves comparisons; inactive seats hide and ties hide the crown. Existing replicated scores remain the source of truth, with no new networking traffic.
+- Removed gameplay keybind overlay and floating obstacle instructions; retained charge/restart progress feedback.
+
+## 0.36 local status effects
+
+- Replaced the explicit spark banner with a subtle breathing gold edge vignette.
+- Invisibility adds a travelling blue/lilac edge shimmer visible only to its owner. Both effects can overlap, leave the center clear, and disappear in menus.
+- State regression covers spark transfer, invisibility expiry, overlapping effects and menu cleanup; in-engine screenshots checked.
+
 ## 0.35 reliability work
 
 - Small obstacle batches, unchanged-state suppression, one-second full refresh; protocol 11.
@@ -19,7 +37,7 @@
 
 - 0.32: swap bell + ceramic spawn saucer. Revolved silhouettes, gold material, cream lip, teal base, recessed ready ring, subdued empty state, slower bell bob/spin, two sparkles. Spawn labels hidden. Collision remains nonblocking.
 - Next: ghost, pocket watch, air horn, then remaining collectibles to match the approved cream/teal/coral/gold mockup.
-- Pending: replace explicit spark banner with subtle gold vignette; restore angular cardboard-box art. These have not been implemented in this focused bell/pedestal pass.
+- Pending: restore angular cardboard-box art. Spark vignette completed in 0.36.
 - Reference: generated_images/01a0593e-5e63-7d63-b8d1-dbe462487ed2/exec-a47f3a07-f3d3-4ebc-95cf-224be7fc9895.png under the user's Codex directory.
 
 ## Visual pass 0.31

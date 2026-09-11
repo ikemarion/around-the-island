@@ -122,6 +122,7 @@ text = "P1 has the spark — catch them!"
 horizontal_alignment = 1
 
 [node name="Controls" type="Label" parent="HUD"]
+visible = false
 offset_left = 24.0
 offset_top = 92.0
 offset_right = 530.0

@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 11
-const BUILD_VERSION := "0.35"
+const BUILD_VERSION := "0.38"
 var network_diagnostics: Node
 var obstacle_last_sent: Dictionary = {}
 var restart_hold := 0.0
@@ -65,6 +65,21 @@ var token_holder := 0
 var time_remaining := ROUND_DURATION
 var tag_cooldown_remaining := 0.0
 var round_running := false
+var celebrated_epoch := -1
+var celebration: Control
+
+func _can_roam() -> bool:
+	return session_mode in [&"solo", &"host", &"client"] and not waiting_for_start and round_epoch > 0
+
+func _celebrate_round() -> void:
+	if celebrated_epoch == round_epoch:
+		return
+	celebrated_epoch = round_epoch
+	if is_instance_valid(celebration):
+		celebration.queue_free()
+	celebration = preload("res://scripts/round_celebration.gd").new()
+	celebration.result = _round_result_text()
+	$HUD.add_child(celebration)
 var session_mode: StringName = &"lobby"
 var snapshot_time := 0.0
 var obstacle_spawn_transforms: Dictionary = {}
@@ -167,14 +182,15 @@ func _physics_process(delta: float) -> void:
 	if session_mode in [&"lobby", &"hosting", &"joining"]:
 		return
 	if session_mode == &"client":
-		if round_running:
+		if _can_roam():
 			_send_local_input()
 		_update_world_scoreboard()
 		return
-	if round_running:
+	if _can_roam():
 		for slot in MAX_PLAYERS:
 			if active_slots[slot] and players[slot].global_position.y < -3.0:
 				_on_kill_box_body_entered(players[slot])
+	if round_running:
 		time_remaining = maxf(0.0, time_remaining - delta)
 		if active_slots[token_holder]:
 			scores[token_holder] += delta
@@ -259,12 +275,14 @@ func _setup_session_menu(menu_theme: Theme) -> void:
 
 
 func _on_kill_box_body_entered(body: Node3D) -> void:
-	if session_mode == &"client" or not round_running or not body is ATIPlayer:
+	if session_mode == &"client" or not _can_roam() or not body is ATIPlayer:
 		return
 	var slot := players.find(body)
 	if slot < 0 or not active_slots[slot]:
 		return
 	players[slot].respawn_at(PLAYER_SPAWNS[slot])
+	if not round_running:
+		return
 	status_label.text = "Player %d fell out and respawned!" % (slot + 1)
 	if slot == token_holder:
 		for offset in range(1, MAX_PLAYERS):
@@ -449,7 +467,7 @@ func _admit_player(peer_id: int) -> void:
 		_broadcast_roster()
 	else:
 		status_label.text = "Player %d joined!" % (slot + 1)
-		players[slot].simulation_enabled = round_running
+		players[slot].simulation_enabled = _can_roam()
 		_broadcast_snapshot(true)
 
 
@@ -508,7 +526,7 @@ func _assign_slot(slot: int, room_id: String = "") -> void:
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 1)
 func _receive_remote_input(movement: Vector2, aim_forward: Vector3, _jump: bool, _crouch: bool, _interact: bool, _throw_item: bool, _quick_item: bool, sequence: int = 0, epoch: int = 0) -> void:
-	if not multiplayer.is_server() or not round_running or epoch != round_epoch:
+	if not multiplayer.is_server() or not _can_roam() or epoch != round_epoch:
 		return
 	var sender := multiplayer.get_remote_sender_id()
 	if not peer_to_slot.has(sender) or sequence <= int(peer_input_sequences.get(sender, -1)):
@@ -524,7 +542,7 @@ func _receive_remote_input(movement: Vector2, aim_forward: Vector3, _jump: bool,
 @rpc("any_peer", "call_remote", "reliable", 0)
 func _receive_action_state(sequence: int, epoch: int, buttons: Array, aim: Vector3, edges: Array) -> void:
 	var sender := multiplayer.get_remote_sender_id()
-	if not multiplayer.is_server() or not round_running or epoch != round_epoch or not peer_to_slot.has(sender):
+	if not multiplayer.is_server() or not _can_roam() or epoch != round_epoch or not peer_to_slot.has(sender):
 		return
 	if sequence <= int(peer_action_sequences.get(sender, -1)) or buttons.size() != 6 or edges.size() > 4 or not aim.is_finite() or aim.length_squared() < 0.001:
 		return
@@ -585,6 +603,8 @@ func _send_local_input() -> void:
 
 
 func reset_round() -> void:
+	if is_instance_valid(celebration):
+		celebration.queue_free()
 	waiting_for_start = false
 	round_epoch += 1
 	peer_input_sequences.clear()
@@ -638,9 +658,10 @@ func _set_token_holder(holder: int) -> void:
 
 func _end_round() -> void:
 	round_running = false
-	_set_simulation(false)
+	_set_simulation(true)
+	_celebrate_round()
 	_play_match_sfx("round_end")
-	status_label.text = _round_result_text() + " Press R for a rematch"
+	status_label.text = _round_result_text()
 	if session_mode == &"host":
 		_broadcast_snapshot(true)
 
@@ -792,13 +813,17 @@ func _receive_match_state(new_scores: Array, time: float, holder: int, spawn: Di
 		_set_local_camera(local_slot)
 	for slot in MAX_PLAYERS:
 		scores[slot] = float(new_scores[slot])
-	_set_simulation(running)
+	_set_simulation(_can_roam())
+	if running and is_instance_valid(celebration):
+		celebration.queue_free()
 	if not spawn.is_empty():
 		var spawners := get_tree().get_nodes_in_group("item_spawner")
 		if not spawners.is_empty():
 			spawners[0].apply_network_state(spawn)
 	if not running:
-		status_label.text = _round_result_text() + " Waiting for the host to restart."
+		status_label.text = _round_result_text()
+		if _can_roam():
+			_celebrate_round()
 	_update_world_scoreboard()
 
 
@@ -812,8 +837,8 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 	p.set_slot_active(state.active, true)
 	p.client_predicted = slot == local_slot
 	p.network_controlled = slot == local_slot
-	p.simulation_enabled = state.active and round_running
-	if not round_running:
+	p.simulation_enabled = state.active and _can_roam()
+	if not _can_roam():
 		p.replica_target_ready = false
 	p.apply_authoritative_motion(state)
 	p.equipped_spawn_item = state.item
@@ -827,7 +852,7 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 		p.body_mesh.rotation.y = float(state.get("facing", 0.0))
 	p._set_crouched(state.crouched)
 	if not round_running and not waiting_for_start:
-		status_label.text = _round_result_text() + " Waiting for the host to restart."
+		status_label.text = _round_result_text()
 	_set_token_holder(token_holder)
 
 
@@ -1045,6 +1070,9 @@ func _cleanup_slot(slot: int) -> void:
 
 
 func _prepare_session() -> void:
+	celebrated_epoch = -1
+	if is_instance_valid(celebration):
+		celebration.queue_free()
 	obstacle_last_sent.clear()
 	network_diagnostics.reset_session()
 	lobby_id = ""
@@ -1233,11 +1261,10 @@ func _process(_delta: float) -> void:
 	if local_slot >= 0 and local_slot < players.size():
 		var p = players[local_slot]
 		if is_instance_valid(p.held_chair) or not p.remote_held_name.is_empty():
-			obstacle_hint.text = "Hold M1 / RT to charge • Release to throw\nRelease E / X to drop"
 			if p.charging_throw:
 				obstacle_hint.text = "THROW POWER  %d%%" % int(100.0 * p.throw_charge / p.throw_charge_seconds)
 	if restart_hold > 0.0:
-		obstacle_hint.text = "Hold Y / Triangle to restart: %d%%" % mini(100, int(restart_hold * 100.0))
+		obstacle_hint.text = "Restarting: %d%%" % mini(100, int(restart_hold * 100.0))
 	if is_instance_valid(distant_scoreboards):
 		distant_scoreboards.visible = not lobby.visible
 	$HUD.visible = not lobby.visible and not session_menu.visible

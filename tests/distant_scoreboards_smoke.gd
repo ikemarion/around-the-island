@@ -17,9 +17,20 @@ func run() -> void:
 	main._update_world_scoreboard()
 	assert(main.distant_scoreboards.displays.size() == 4)
 	for display in main.distant_scoreboards.displays:
-		assert(is_equal_approx(display.rows[0].bar.scale.x, 3.2))
+		assert(is_equal_approx(display.rows[0].bar.scale.y, 2.56))
 		assert(display.rows[0].name.text == "YOU")
-		assert(display.title.text.contains("28s"))
+		assert(display.title.text == "28s LEFT")
+		assert(display.crown.visible)
+	for remaining in [0.2, 0.0, -0.1]:
+		main.time_remaining = remaining
+		main._update_world_scoreboard()
+		for display in main.distant_scoreboards.displays:
+			assert(display.title.text == ("01s LEFT" if remaining > 0 else "00s LEFT"))
+	main.time_remaining = 28
+	main.scores[1] = 24.0
+	main._update_world_scoreboard()
+	assert(not main.distant_scoreboards.displays[0].crown.visible)
+	main.scores[1] = 12.0
 	main.local_slot = 2
 	main.active_slots[1] = false
 	main._update_world_scoreboard()
@@ -27,11 +38,15 @@ func run() -> void:
 	assert(not main.distant_scoreboards.displays[0].rows[1].node.visible)
 	main.active_slots[1] = true
 	main.local_slot = 0
+	main.scores.assign([42.0,28.0,35.0,19.0])
 	main._update_world_scoreboard()
 	main.camera.set_process(false)
 	main.camera.set_physics_process(false)
-	main.camera.global_position = Vector3(-5.2, 1.5, 0)
-	main.camera.look_at(Vector3(0, 9, -28))
+	main.set_process(false)
+	main.get_node("HUD").hide()
+	main.camera.global_position = Vector3(3,12,-5)
+	main.camera.fov = 65
+	main.camera.look_at(Vector3(0,13,-28))
 	if DisplayServer.get_name() != "headless":
 		await process_frame
 		await RenderingServer.frame_post_draw
