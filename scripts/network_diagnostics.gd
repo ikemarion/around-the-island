@@ -145,7 +145,7 @@ func export_report(reason := "manual", peer := 0) -> String:
 	if not file:
 		push_warning("Cannot save diagnostic report")
 		return ""
-	file.store_string(JSON.stringify({"build":game.BUILD_VERSION,"reason":reason,"peer":peer,"mode":str(game.session_mode),"round_epoch":game.round_epoch,"time_remaining":game.time_remaining,"rtt_ms":rtt_ms,"pending_probes":pending.size(),"unanswered_probes":unanswered_probes,"peer_stats":peer_stats,"recent_events":history,"note":"Local diagnostics only. A disconnect does not identify its cause. Probe misses are not packet-loss percentage. session_ended includes intentional exits. No automatic upload."},"\t"))
+	file.store_string(JSON.stringify({"build":game.BUILD_VERSION,"reason":reason,"peer":peer,"mode":str(game.session_mode),"round_epoch":game.round_epoch,"time_remaining":game.time_remaining,"rtt_ms":rtt_ms,"pending_probes":pending.size(),"unanswered_probes":unanswered_probes,"peer_stats":peer_stats,"recent_events":history,"note":"ATI diagnostics automatically shared with the configured host on a subsequent join. A disconnect does not identify its cause. Probe misses are not packet-loss percentage. session_ended includes intentional exits."},"\t"))
 	file.close()
 	last_report = ProjectSettings.globalize_path(path)
 	print("ATI_DIAGNOSTIC_REPORT ",last_report)
@@ -155,7 +155,8 @@ func open_reports() -> void:
 	if export_report().is_empty():
 		game.lobby_status.text = "Could not save diagnostics. Check folder permissions."
 		return
-	OS.shell_open(ProjectSettings.globalize_path(directory + "/reports"))
+	# Parent folder contains both this computer's reports and received reports.
+	OS.shell_open(ProjectSettings.globalize_path(directory))
 
 @rpc("authority","call_remote","unreliable",2)
 func _reply(id: int) -> void:

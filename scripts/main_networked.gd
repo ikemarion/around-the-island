@@ -9,9 +9,10 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 11
-const BUILD_VERSION := "0.40"
+const PROTOCOL_VERSION := 12
+const BUILD_VERSION := "0.41"
 var network_diagnostics: Node
+var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
 var restart_hold := 0.0
 var restart_latched := false
@@ -105,6 +106,10 @@ func _ready() -> void:
 	network_diagnostics.name = "NetworkDiagnostics"
 	network_diagnostics.game = self
 	add_child(network_diagnostics)
+	report_transfer = preload("res://scripts/report_transfer.gd").new()
+	report_transfer.name = "ReportTransfer"
+	report_transfer.game = self
+	add_child(report_transfer)
 	var spark_indicator := preload("res://scripts/spark_indicator.gd").new()
 	spark_indicator.name = "SparkIndicator"
 	spark_indicator.game = self
@@ -509,6 +514,7 @@ func _assign_slot(slot: int, room_id: String = "") -> void:
 	local_slot = slot
 	lobby_id = room_id
 	session_mode = &"client"
+	report_transfer.begin()
 	_reset_input_tracking()
 	for index in MAX_PLAYERS:
 		players[index].ai_controlled = false
@@ -1075,6 +1081,7 @@ func _cleanup_slot(slot: int) -> void:
 
 
 func _prepare_session() -> void:
+	if is_instance_valid(report_transfer): report_transfer.reset()
 	if is_instance_valid(network_diagnostics):
 		network_diagnostics.record("session_teardown_requested",{"previous_mode":str(session_mode)})
 	celebrated_epoch = -1

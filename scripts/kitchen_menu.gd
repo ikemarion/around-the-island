@@ -40,6 +40,11 @@ func build(main: Node, existing: Dictionary) -> void:
 	diagnostics.text = "Connection reports"
 	header.add_child(diagnostics)
 	diagnostics.pressed.connect(game.network_diagnostics.open_reports)
+	var privacy := Label.new()
+	privacy.text = "Joining shares saved ATI connection reports with this host. No other files are sent."
+	privacy.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	privacy.add_theme_font_size_override("font_size",14)
+	add_child(privacy)
 	_line(self)
 	body = HBoxContainer.new()
 	body.add_theme_constant_override("separation", 30)

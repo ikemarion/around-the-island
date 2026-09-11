@@ -1,8 +1,12 @@
-# ATI online play — v0.40 (protocol 11)
+# ATI online play — v0.41 (protocol 12)
+
+Everyone must update to v0.41. Joining automatically shares previously unsent ATI JSON diagnostic reports with the configured host; no other files are sent. Connection reports opens the network-logs folder: reports contains your own files, received contains reports uploaded by friends. Interrupted transfers retry on the next join. The final disconnect report cannot arrive until the player reconnects.
+
+Uploads use 800-byte acknowledged chunks, at most four chunks/second per player, 256 KiB per report, 2 MiB of received chunks per connection, and a 50 MiB host inbox cap. Oversized reports stay local; a full inbox requires the host to archive reports manually. Receipt hashes prevent duplicates. There is no GitHub or third-party upload.
 
 v0.40 adds one-second ENet transport statistics and snapshot-silence timing to automatic reports. Disconnect wording no longer assumes the host closed the lobby. Timeouts are unchanged. Use this build on both computers for the next diagnostic playtest.
 
-v0.39 automatically saves local diagnostic reports on disconnect/session exit. Use Connection reports in the lobby or game menu to save/open the reports folder. Ask both players to share their report; nothing is uploaded automatically.
+v0.39 introduced local diagnostic reports on disconnect/session exit; v0.41 adds the automatic sharing described above.
 
 Update everyone to v0.38 for post-match free movement and confetti/winner announcements. Scores freeze at the buzzer; the host can restart when ready. Older clients do not support post-match movement.
 

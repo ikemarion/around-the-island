@@ -1,5 +1,15 @@
 # Network reliability pass — v0.35
 
+## v0.41 automatic historical report collection
+
+Previously unsent ATI-*.json files from the local reports folder upload after successful slot assignment. The host saves content-addressed JSON in network-logs/received, with receipt events mapping peer IDs to hashes. Successful disk write is acknowledged before a client writes its sent marker. Unacknowledged reports remain local and retry on the next join. Reports received from others are never re-uploaded.
+
+Wire protocol 12 is required. Transfer uses stop-and-wait 800-byte unreliable datagrams with application acknowledgements, every 250 ms; no additional reliable-packet backlog. Limits: 256 KiB/report, 2 MiB incoming chunks/peer/connection, 50 MiB total inbox. The host checks admission, digest syntax, offsets, content hash and basic JSON structure; clients cannot supply filesystem paths. Oversized reports and full inboxes are not silently deleted.
+
+Two-instance test passed: automatic upload, host JSON persistence, acknowledgement markers and duplicate skip on another begin. Invalid path-like digest rejected. This does not validate Internet reliability.
+
+The older sections below describe prior builds; v0.41 does upload ATI reports to the configured game host, not to a third-party service.
+
 ## v0.40 transport inspection
 
 Validation: localhost host plus three clients completed 180 seconds and three host rounds; final client application RTT was 7/7/8 ms. Rejoin/remote-item lifecycle and packaged diagnostic export tests passed. The host logged a channel-0 send warning at test teardown; this is not a reproduction of the mid-match remote drop and remains a cleanup issue to investigate. No public-tunnel A/B test has been completed.
