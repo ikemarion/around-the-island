@@ -1,5 +1,11 @@
 # Network reliability pass — v0.35
 
+## v0.39 automatic reports
+
+Disconnect signals save a JSON report under `network-logs/reports`. Session exits also save a report before state resets, including intentional exits. These are observations, not a determination of why a connection ended. Connection reports buttons in the lobby and game menu save a current report and open the folder. Nothing is uploaded automatically.
+
+Reports include up to 240 recent events, local RTT/probe state and per-peer last-probe timestamps/counts on the host. Host probe counts are not latency or packet-loss measurements. Collect both the host and friend's reports; the host cannot recover a friend's crash log remotely.
+
 All participants must update: protocol 11 adds bounded obstacle batches.
 
 ## Changes

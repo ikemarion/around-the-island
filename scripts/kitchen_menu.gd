@@ -36,6 +36,10 @@ func build(main: Node, existing: Dictionary) -> void:
 	var greeting := _label(header, "PULL UP A CHAIR", 14)
 	greeting.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	greeting.text = "v" + game.BUILD_VERSION + " · PULL UP A CHAIR"
+	var diagnostics := Button.new()
+	diagnostics.text = "Connection reports"
+	header.add_child(diagnostics)
+	diagnostics.pressed.connect(game.network_diagnostics.open_reports)
 	_line(self)
 	body = HBoxContainer.new()
 	body.add_theme_constant_override("separation", 30)

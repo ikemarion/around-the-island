@@ -1,4 +1,6 @@
-# ATI online play — v0.38 (protocol 11)
+# ATI online play — v0.39 (protocol 11)
+
+v0.39 automatically saves local diagnostic reports on disconnect/session exit. Use Connection reports in the lobby or game menu to save/open the reports folder. Ask both players to share their report; nothing is uploaded automatically.
 
 Update everyone to v0.38 for post-match free movement and confetti/winner announcements. Scores freeze at the buzzer; the host can restart when ready. Older clients do not support post-match movement.
 

@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 11
-const BUILD_VERSION := "0.38"
+const BUILD_VERSION := "0.39"
 var network_diagnostics: Node
 var obstacle_last_sent: Dictionary = {}
 var restart_hold := 0.0
@@ -268,6 +268,10 @@ func _setup_session_menu(menu_theme: Theme) -> void:
 	resume.text = "Resume"
 	box.add_child(resume)
 	resume.pressed.connect(func(): _set_session_menu(false))
+	var diagnostics_button := Button.new()
+	diagnostics_button.text = "Connection reports"
+	box.add_child(diagnostics_button)
+	diagnostics_button.pressed.connect(network_diagnostics.open_reports)
 	var leave := Button.new()
 	leave.name = "Leave"
 	box.add_child(leave)
