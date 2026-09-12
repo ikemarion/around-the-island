@@ -39,6 +39,13 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	if is_instance_valid(game) and game.local_slot >= 0 and not carrying:
+		var player = game.players[game.local_slot]
+		var fraction: float = player.boost_time / 5.0 if player.boost_time > 0.0 else player.chase_charge
+		var center := Vector2(size.x * 0.5, size.y * 0.91)
+		draw_arc(center, 15, 0, TAU, 40, Color(0.12,0.3,0.25,0.45), 3, true)
+		draw_arc(center, 15, -PI/2, -PI/2+TAU*fraction, 40, Color(1,0.8,0.3,0.9), 3, true)
+		draw_colored_polygon(PackedVector2Array([center+Vector2(2,-9),center+Vector2(-6,1),center+Vector2(0,1),center+Vector2(-2,9),center+Vector2(6,-1),center+Vector2(0,-1)]), Color(1,0.94,0.72,0.9))
 	# Tiny ballistic sparkler streaks travel across the screen, fading near aim.
 	for i in 24:
 		var phase := fmod(age*(0.28+0.04*sin(float(i)))+float(i)*0.618,1.0)

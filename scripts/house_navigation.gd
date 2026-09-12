@@ -148,6 +148,38 @@ func nearest_safe_position(desired: Vector3) -> Vector3:
 	return best
 
 
+func border_door_pair(source: Vector3) -> Array:
+	if not _ready_for_routes:
+		return []
+	var candidates: Array = []
+	for side in 4:
+		var inward := [Vector3.RIGHT,Vector3.LEFT,Vector3.BACK,Vector3.FORWARD][side] as Vector3
+		var length: float = map_bounds.size.y if side < 2 else map_bounds.size.x
+		for step in range(2, int(length)-1):
+			var point := Vector3(map_bounds.position.x, floor_height+0.05, map_bounds.position.y)
+			if side < 2:
+				point.x += 0.9 if side == 0 else map_bounds.size.x-0.9
+				point.z += step
+			else:
+				point.x += step
+				point.z += 0.9 if side == 2 else map_bounds.size.y-0.9
+			var tangent: Vector3 = inward.cross(Vector3.UP)
+			var clear := true
+			for sample in [point,point+tangent*0.65,point-tangent*0.65,point+inward*1.25]:
+				if not _has_floor(sample) or not _body_fits(sample):
+					clear = false
+			if clear:
+				candidates.append({"position":point,"inward":inward})
+	if candidates.size() < 2:
+		return []
+	candidates.sort_custom(func(a,b): return a.position.distance_squared_to(source) < b.position.distance_squared_to(source))
+	var entry: Dictionary = candidates[0]
+	candidates.sort_custom(func(a,b): return a.position.distance_squared_to(entry.position) > b.position.distance_squared_to(entry.position))
+	if candidates[0].position.distance_to(entry.position) < 5.0:
+		return []
+	return [entry,candidates[0]]
+
+
 func _derive_floor_bounds() -> void:
 	var found := false
 	for floor_node in get_tree().get_nodes_in_group("house_floor"):

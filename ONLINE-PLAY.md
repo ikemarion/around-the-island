@@ -1,6 +1,6 @@
-# ATI online play — v0.44 (protocol 13)
+# ATI online play — v0.45 (protocol 14)
 
-v0.44 adds traveling sparkler HUD streaks, a golden carrier trail, a small carrier slowdown and a gradually charging chaser running boost. The magnet ends with an outward prop burst; the swap bell has a longer metallic ring. Invisibility hides the trail. Everyone must use v0.44 for compatible movement rules (protocol 13).
+v0.45 adds a charged chaser burst: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone must use v0.45 (protocol 14).
 
 ## Direct route comparison
 

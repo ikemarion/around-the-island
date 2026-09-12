@@ -9,8 +9,8 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 13
-const BUILD_VERSION := "0.44"
+const PROTOCOL_VERSION := 14
+const BUILD_VERSION := "0.45"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -32,7 +32,7 @@ var effect_ids: Dictionary = {}
 var manifest_key := ""
 var local_input_sequence := 0
 var local_action_sequence := 0
-var local_buttons := [false, false, false, false, false, false]
+var local_buttons := [false, false, false, false, false, false, false]
 var last_input_send := 0
 
 const SNAPSHOT_INTERVAL := 0.05
@@ -563,7 +563,7 @@ func _receive_action_state(sequence: int, epoch: int, buttons: Array, aim: Vecto
 	var sender := multiplayer.get_remote_sender_id()
 	if not multiplayer.is_server() or not _can_roam() or epoch != round_epoch or not peer_to_slot.has(sender):
 		return
-	if sequence <= int(peer_action_sequences.get(sender, -1)) or buttons.size() != 6 or edges.size() > 4 or not aim.is_finite() or aim.length_squared() < 0.001:
+	if sequence <= int(peer_action_sequences.get(sender, -1)) or buttons.size() != 7 or edges.size() > 5 or not aim.is_finite() or aim.length_squared() < 0.001:
 		return
 	peer_action_sequences[sender] = sequence
 	var player := players[int(peer_to_slot[sender])]
@@ -572,7 +572,7 @@ func _receive_action_state(sequence: int, epoch: int, buttons: Array, aim: Vecto
 	player.network_interact_pressed = bool(buttons[2])
 	player.network_throw_pressed = bool(buttons[3])
 	for edge in edges:
-		if edge in ["jump", "throw", "quick", "pull"] and player.action_queue.size() < 16:
+		if edge in ["jump", "throw", "quick", "pull", "boost"] and player.action_queue.size() < 16:
 			player.action_queue.append({"kind": StringName(edge), "aim": aim.normalized()})
 
 
@@ -592,20 +592,21 @@ func _send_local_input() -> void:
 	right.y = 0.0
 	forward.y = 0.0
 	var world := right.normalized() * raw.x + forward.normalized() * -raw.y
-	var buttons := [Input.is_physical_key_pressed(KEY_SPACE), Input.is_physical_key_pressed(KEY_SHIFT), Input.is_physical_key_pressed(KEY_E), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_physical_key_pressed(KEY_Q), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)]
+	var buttons := [Input.is_physical_key_pressed(KEY_SPACE), Input.is_physical_key_pressed(KEY_SHIFT), Input.is_physical_key_pressed(KEY_E), Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT), Input.is_physical_key_pressed(KEY_Q), Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT), Input.is_physical_key_pressed(KEY_F)]
 	if pad >= 0:
 		buttons[0] = buttons[0] or Input.is_joy_button_pressed(pad, JOY_BUTTON_A)
 		buttons[1] = buttons[1] or Input.is_joy_button_pressed(pad, JOY_BUTTON_LEFT_STICK)
 		buttons[2] = buttons[2] or Input.is_joy_button_pressed(pad, JOY_BUTTON_X)
 		buttons[3] = buttons[3] or Input.get_joy_axis(pad, JOY_AXIS_TRIGGER_RIGHT) > 0.5
 		buttons[4] = buttons[4] or Input.is_joy_button_pressed(pad, JOY_BUTTON_RIGHT_SHOULDER)
+		buttons[6] = buttons[6] or Input.is_joy_button_pressed(pad, JOY_BUTTON_LEFT_SHOULDER)
 		buttons[5] = Input.get_joy_axis(pad, JOY_AXIS_TRIGGER_LEFT) > 0.5 or buttons[5]
 	if (is_instance_valid(session_menu) and session_menu.visible) or (Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and DisplayServer.get_name() != "headless" and camera.first_person_enabled):
 		raw = Vector2.ZERO
 		world = Vector3.ZERO
-		buttons = [false, false, false, false, false, false]
+		buttons = [false, false, false, false, false, false, false]
 	var edges: Array = []
-	for entry in [[0, "jump"], [3, "throw"], [4, "quick"], [5, "pull"]]:
+	for entry in [[0, "jump"], [3, "throw"], [4, "quick"], [5, "pull"], [6, "boost"]]:
 		if buttons[entry[0]] and not local_buttons[entry[0]]:
 			edges.append(entry[1])
 	local_input_sequence += 1
@@ -723,7 +724,7 @@ func _update_world_scoreboard() -> void:
 
 func _player_state(slot: int) -> Dictionary:
 	var p := players[slot]
-	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge}
+	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time}
 
 
 func _broadcast_snapshot(reliable_state := false) -> void:
@@ -870,6 +871,7 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 	p.stun_time_remaining = float(state.get("stun", 0.0))
 	p.slippery_time_remaining = float(state.get("slippery", 0.0))
 	p.chase_charge = float(state.get("chase_charge", 0.0))
+	p.boost_time = float(state.get("boost_time", 0.0))
 	p.remote_held_name = str(state.get("held", ""))
 	if not p.client_predicted:
 		p.body_mesh.rotation.y = float(state.get("facing", 0.0))
@@ -931,6 +933,8 @@ func _receive_effect_state(state: Dictionary, epoch: int, sequence: int) -> void
 	elif state.has("entry"):
 		item.get_node("Entry").global_position = state.entry
 		item.get_node("Exit").global_position = state.exit
+		item.get_node("Entry").rotation.y = float(state.get("entry_yaw",0.0))
+		item.get_node("Exit").rotation.y = float(state.get("exit_yaw",0.0))
 
 
 func _temporary_item_states() -> Array:
@@ -944,6 +948,8 @@ func _temporary_item_states() -> Array:
 		if item.has_node("Entry"):
 			state["entry"] = item.get_node("Entry").global_position
 			state["exit"] = item.get_node("Exit").global_position
+			state["entry_yaw"] = item.get_node("Entry").rotation.y
+			state["exit_yaw"] = item.get_node("Exit").rotation.y
 		states.append(state)
 	return states
 
@@ -969,6 +975,8 @@ func _apply_temporary_item_states(states: Array, sequence: int = -1) -> void:
 		if state.has("entry"):
 			remote_item.get_node("Entry").global_position = state.entry
 			remote_item.get_node("Exit").global_position = state.exit
+			remote_item.get_node("Entry").rotation.y = float(state.get("entry_yaw",0.0))
+			remote_item.get_node("Exit").rotation.y = float(state.get("exit_yaw",0.0))
 		else:
 			remote_item.global_position = state.position
 	for id in remote_temporary_items.keys():
@@ -1072,7 +1080,7 @@ func _play_match_sfx(effect_name: String) -> void:
 func _reset_input_tracking() -> void:
 	local_input_sequence = 0
 	local_action_sequence = 0
-	local_buttons = [false, false, false, false, false, false]
+	local_buttons = [false, false, false, false, false, false, false]
 	last_input_send = 0
 
 

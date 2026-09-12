@@ -1,5 +1,13 @@
 # Future passes
 
+## 0.45 charged boost and border doors
+
+- F / left bumper activates a five-second 80% chaser running boost after eight seconds of recharge. Compact lightning meter shows charge/duration; authority replicates charge/time and validates activation.
+- Shared rounded cream/coral door art for collectible and deployed portals: brass hardware, EXIT plaque, animated mint-gold passage and motes.
+- Emergency doors choose safe outer-map border points: nearest clear entry and distant exit, oriented inward. Placement retains the item when no safe pair exists; orientation replicates to clients.
+- Protocol 14 requires all players to update.
+
+
 ## 0.44 sparkler chase pass
 
 - Tiny traveling gold HUD streaks and a short, faint world-space golden particle trail; trail clears on invisibility and teleports. Phantom HUD unchanged.

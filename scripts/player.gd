@@ -133,6 +133,9 @@ var body_color := Color.WHITE
 var movement_history: Array[Dictionary] = []
 var history_sample_time: float = 0.0
 var chase_charge := 0.0
+var boost_time := 0.0
+var boost_was_pressed := false
+var action_boost := false
 
 # Startup fallback while the modular house builds its navigation grid. These
 # bounds include player clearance around the 7.5 x 3.2 meter kitchen island.
@@ -210,6 +213,7 @@ func set_slot_active(value: bool, replica: bool = false) -> void:
 func set_has_token(value: bool) -> void:
 	if value != has_token:
 		chase_charge = 0.0
+		boost_time = 0.0
 	has_token = value
 	_refresh_character_visuals()
 
@@ -347,6 +351,8 @@ func apply_slippery(duration: float) -> void:
 
 func reset_movement_state() -> void:
 	chase_charge = 0.0
+	boost_time = 0.0
+	boost_was_pressed = false
 	_set_highlighted_chair(null)
 	network_movement_input = Vector2.ZERO
 	network_aim_forward = Vector3.FORWARD
@@ -401,6 +407,7 @@ func reset_movement_state() -> void:
 
 func respawn_at(spawn_position: Vector3) -> void:
 	chase_charge = 0.0
+	boost_time = 0.0
 	motion_epoch += 1
 	movement_history.clear()
 	_release_chair()
@@ -443,6 +450,7 @@ func _physics_process(delta: float) -> void:
 	action_quick = false
 	action_aim = Vector3.ZERO
 	action_pull = false
+	action_boost = false
 	if not action_queue.is_empty():
 		var queued = action_queue.pop_front()
 		var action: StringName = queued.kind if queued is Dictionary else StringName(queued)
@@ -452,6 +460,7 @@ func _physics_process(delta: float) -> void:
 		action_throw = action == &"throw"
 		action_quick = action == &"quick"
 		action_pull = action == &"pull"
+		action_boost = action == &"boost"
 	slippery_time_remaining = maxf(0.0, slippery_time_remaining - delta)
 	stun_time_remaining = maxf(0.0, stun_time_remaining - delta)
 	var was_invisible := is_invisible()
@@ -490,7 +499,12 @@ func _physics_process(delta: float) -> void:
 
 	var should_crouch := not is_stunned and not ai_controlled and (crouch_pressed or slide_time_remaining > 0.0)
 	_set_crouched(should_crouch)
-	_update_chase_charge(delta, input_direction.length_squared() > 0.1 and not should_crouch and not is_stunned)
+	_update_chase_charge(delta, true)
+	var boost_pressed := _is_boost_pressed()
+	if action_boost or (boost_pressed and not boost_was_pressed):
+		if _try_boost(input_direction):
+			horizontal_velocity = Vector2(velocity.x, velocity.z)
+	boost_was_pressed = boost_pressed
 
 	if slide_time_remaining > 0.0:
 		slide_time_remaining = maxf(0.0, slide_time_remaining - delta)
@@ -558,19 +572,42 @@ func _physics_process(delta: float) -> void:
 	_record_movement_history(delta)
 
 
-func _update_chase_charge(delta: float, running: bool) -> void:
+func _update_chase_charge(delta: float, _running: bool) -> void:
 	var game = get_tree().current_scene
 	if game == null or not "round_running" in game or not game.round_running or has_token:
 		chase_charge = 0.0
+		boost_time = 0.0
+	elif boost_time > 0.0:
+		boost_time = maxf(0.0, boost_time - delta)
 	else:
-		chase_charge = move_toward(chase_charge, 1.0 if running else 0.0, delta / (6.0 if running else 2.0))
+		chase_charge = minf(1.0, chase_charge + delta / 8.0)
 
 
 func _chase_speed_multiplier() -> float:
 	var game = get_tree().current_scene
 	if game == null or not "round_running" in game or not game.round_running:
 		return 1.0
-	return 0.93 if has_token else (1.0 + 0.15 * chase_charge if not crouched else 1.0)
+	return 0.93 if has_token else (1.8 if boost_time > 0.0 and not crouched else 1.0)
+
+
+func _is_boost_pressed() -> bool:
+	if input_suspended or network_controlled:
+		return false
+	if ai_controlled:
+		return chase_charge >= 1.0 and _ai_visible_target() != null
+	return Input.is_physical_key_pressed(KEY_F) or (joypad_id >= 0 and Input.is_joy_button_pressed(joypad_id, JOY_BUTTON_LEFT_SHOULDER))
+
+
+func _try_boost(direction: Vector2) -> bool:
+	if chase_charge < 1.0 or has_token or boost_time > 0.0 or stun_time_remaining > 0.0 or crouched or not get_tree().current_scene.round_running:
+		return false
+	chase_charge = 0.0
+	boost_time = 5.0
+	if direction.length_squared() > 0.01:
+		var burst := direction.normalized() * max_speed * 1.8
+		velocity.x = burst.x
+		velocity.z = burst.y
+	return true
 
 
 func _update_presentation(delta: float) -> void:
@@ -1086,26 +1123,17 @@ func _use_rewind_watch() -> void:
 
 
 func _deploy_emergency_doors() -> void:
-	var forward := _get_flat_aim_direction()
-	var entry_position := global_position + forward * 1.7
-	entry_position.y = 0.0
-	var exit_position := Vector3(-entry_position.x, 0.0, -entry_position.z)
 	var navigation = _house_navigation()
-	if navigation != null:
-		entry_position = navigation.nearest_safe_position(entry_position)
-		exit_position = navigation.nearest_safe_position(exit_position)
-		if not entry_position.is_finite() or not exit_position.is_finite():
-			equipped_spawn_item = &"emergency_door"
-			quick_item_event.emit("No clear floor for the doors — item kept.")
-			return
-	else:
-		exit_position.x = clampf(exit_position.x, -7.2, 7.2)
-		exit_position.z = clampf(exit_position.z, -4.7, 4.7)
+	var pair: Array = navigation.border_door_pair(global_position) if navigation != null else []
+	if pair.size() != 2:
+		equipped_spawn_item = &"emergency_door"
+		quick_item_event.emit("No clear border for the doors — item kept.")
+		return
 	var doors := EMERGENCY_DOORS_SCENE.instantiate()
 	get_tree().current_scene.add_child(doors)
-	doors.setup(entry_position, exit_position)
+	doors.setup(pair[0].position, pair[1].position, pair[0].inward, pair[1].inward)
 	_play_sfx("door_open")
-	quick_item_event.emit("Emergency doors open for ten seconds — chairs fit too!")
+	quick_item_event.emit("Border doors open for ten seconds!")
 
 
 func _get_flat_aim_direction() -> Vector3:

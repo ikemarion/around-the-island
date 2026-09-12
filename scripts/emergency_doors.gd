@@ -11,13 +11,22 @@ var recent_bodies: Dictionary = {}
 
 
 func _ready() -> void:
+	for portal in [entry,exit]:
+		for child in portal.get_children():
+			if child is MeshInstance3D or child is Light3D:
+				child.queue_free()
+		var art := preload("res://scripts/emergency_door_art.gd").new()
+		art.position.y = -1.05
+		portal.add_child(art)
 	entry.body_entered.connect(_on_door_entered.bind(exit))
 	exit.body_entered.connect(_on_door_entered.bind(entry))
 
 
-func setup(entry_position: Vector3, exit_position: Vector3) -> void:
+func setup(entry_position: Vector3, exit_position: Vector3, entry_inward := Vector3.BACK, exit_inward := Vector3.FORWARD) -> void:
 	entry.global_position = entry_position + Vector3.UP * 1.05
 	exit.global_position = exit_position + Vector3.UP * 1.05
+	entry.rotation.y = atan2(entry_inward.x,entry_inward.z)
+	exit.rotation.y = atan2(exit_inward.x,exit_inward.z)
 
 
 func _process(delta: float) -> void:
@@ -39,11 +48,7 @@ func _on_door_entered(body: Node3D, destination: Area3D) -> void:
 		return
 	if not (body is CharacterBody3D or body is RigidBody3D):
 		return
-	var outward := destination.global_position
-	outward.y = 0.0
-	if outward.length_squared() < 0.01:
-		outward = Vector3.FORWARD
-	outward = outward.normalized()
+	var outward := destination.global_basis.z.normalized()
 	var height := 0.05 if body is CharacterBody3D else maxf(0.45, body.global_position.y)
 	var landing := Vector3(destination.global_position.x, height, destination.global_position.z) + outward * exit_offset
 	var navigation = get_tree().current_scene.get_node_or_null("Arena/HouseNavigation")

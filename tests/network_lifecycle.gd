@@ -27,6 +27,9 @@ func run() -> void:
 				main.add_child(effect)
 				effect.setup(kind, main.players[0], main.players[1])
 			main.players[1].equipped_spawn_item = &"invisibility"
+			main.token_holder = 0
+			main._set_token_holder(0)
+			main.players[1].chase_charge = 1.0
 			var tire = main.find_child("GarageTire", true, false)
 			check(tire != null, "Garage prop missing on host")
 			tire.freeze = true
@@ -60,6 +63,13 @@ func run() -> void:
 			Input.parse_input_event(event)
 			await create_timer(0.25, true).timeout
 			check(main.players[1].is_invisible(), "Client quick action failed")
+			event.physical_keycode = KEY_F
+			event.pressed = true
+			Input.parse_input_event(event)
+			await create_timer(0.15,true).timeout
+			event.pressed = false
+			Input.parse_input_event(event)
+			check(main.players[1].boost_time > 0.0, "Client charged boost failed")
 			main._enter_lobby()
 			await create_timer(0.4, true).timeout
 		print("NETWORK_LIFECYCLE client: rejoin, effects and quick action passed")

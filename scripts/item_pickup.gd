@@ -231,12 +231,11 @@ func _make_air_horn(art: Node3D, _color: Color) -> void:
 		_box(art,Vector3(0.08,0.017,0.012),Vector3(-0.255,-0.18+y,0.221),teal,"GustLines")
 
 
-func _make_door(art: Node3D, color: Color) -> void:
-	_capsule(art, Vector3(0.82, 1.12, 0.24), Vector3.ZERO, INK, "DoorFrame")
-	_capsule(art, Vector3(0.67, 0.96, 0.25), Vector3(0, -0.02, 0), color, "Door")
-	for y in [-0.24, 0.22]:
-		_ball(art, Vector3(0.43, 0.23, 0.06), Vector3(0, y, 0.14), color.darkened(0.16), "DoorPanel")
-	_ball(art, Vector3.ONE * 0.10, Vector3(0.21, -0.02, 0.17), CREAM, "DoorKnob")
+func _make_door(art: Node3D, _color: Color) -> void:
+	var door := preload("res://scripts/emergency_door_art.gd").new()
+	door.scale = Vector3.ONE * 0.48
+	door.position.y = -0.55
+	art.add_child(door)
 
 
 func _make_decoys(art: Node3D, color: Color) -> void:
