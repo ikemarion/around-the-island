@@ -39,21 +39,21 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	# Quiet golden stars around the perimeter, never over the aiming area.
+	# Tiny ballistic sparkler streaks travel across the screen, fading near aim.
 	for i in 24:
-		var phase := fmod(age*0.22+float(i)*0.618,1.0)
-		var alpha := sin(phase*PI)*spark_strength*0.85
-		var side := i%4
-		var along := fmod(float(i)*0.381+age*0.009,1.0)
-		var inset := 0.035+0.07*sin(float(i)*2.3)*sin(float(i)*2.3)
-		var uv := Vector2(inset,along)
-		if side == 1: uv = Vector2(1.0-inset,along)
-		if side == 2: uv = Vector2(along,inset)
-		if side == 3: uv = Vector2(along,1.0-inset)
+		var phase := fmod(age*(0.28+0.04*sin(float(i)))+float(i)*0.618,1.0)
+		var sign_x := 1.0 if i%2 == 0 else -1.0
+		var x := -0.05+phase*1.1
+		if sign_x < 0: x = 1.0-x
+		var uv := Vector2(x,0.1+fmod(float(i)*0.381,0.8)-0.28*phase+0.35*phase*phase)
+		var center_fade := smoothstep(0.07,0.28,uv.distance_to(Vector2(0.5,0.5)))
+		var alpha := sin(phase*PI)*spark_strength*0.55*center_fade
 		var p := uv*size
-		var radius := (3.0+5.0*sin(phase*PI))*minf(size.x/1280.0,size.y/720.0)
-		draw_circle(p,radius*2.0,Color(1,0.73,0.18,alpha*0.1))
-		draw_colored_polygon(PackedVector2Array([p+Vector2(0,-radius),p+Vector2(radius*0.23,-radius*0.23),p+Vector2(radius,0),p+Vector2(radius*0.23,radius*0.23),p+Vector2(0,radius),p+Vector2(-radius*0.23,radius*0.23),p+Vector2(-radius,0),p+Vector2(-radius*0.23,-radius*0.23)]),Color(1,0.93,0.58,alpha))
+		var radius := 1.4*minf(size.x/1280.0,size.y/720.0)
+		var tangent := Vector2(sign_x*1.1,-0.28+0.7*phase).normalized()
+		draw_line(p-tangent*radius*8.0,p,Color(1,0.73,0.18,alpha*0.4),radius,true)
+		draw_circle(p,radius*3.0,Color(1,0.73,0.18,alpha*0.12))
+		draw_circle(p,radius,Color(1,0.95,0.67,alpha))
 	# Ghost motes drift upward at the sides; no world-space reveal to opponents.
 	for i in 20:
 		var travel := fmod(age*0.07+float(i)*0.618,1.0)

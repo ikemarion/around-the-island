@@ -47,7 +47,7 @@ static func _effect_duration(effect_name: String) -> float:
 		"stunned": return 0.42
 		"air_horn": return 0.5
 		"invisibility": return 0.48
-		"swap_bell": return 0.42
+		"swap_bell": return 1.35
 		"spring": return 0.34
 		"deploy": return 0.24
 		"rewind": return 0.55
@@ -92,7 +92,10 @@ static func _effect_sample(effect_name: String, time: float, progress: float, fr
 		"invisibility":
 			return (sin(TAU * (920.0 - 610.0 * progress) * time) * 0.24 + noise * 0.1) * sin(PI * progress)
 		"swap_bell":
-			return (sin(TAU * 660.0 * time) + sin(TAU * 990.0 * time) * 0.6) * decay * 0.3
+			var ring := sin(TAU * 880.0 * time) * exp(-3.0 * time)
+			ring += sin(TAU * 2376.0 * time) * exp(-6.0 * time) * 0.45
+			ring += sin(TAU * 4752.0 * time) * exp(-10.0 * time) * 0.2
+			return (ring * 0.5 + noise * exp(-90.0 * time) * 0.12) * minf(time * 800.0, 1.0) * (1.0 - progress)
 		"spring":
 			return sin(TAU * (180.0 + 720.0 * progress) * time) * decay * 0.34
 		"deploy":

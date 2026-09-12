@@ -132,6 +132,7 @@ var body_material: StandardMaterial3D
 var body_color := Color.WHITE
 var movement_history: Array[Dictionary] = []
 var history_sample_time: float = 0.0
+var chase_charge := 0.0
 
 # Startup fallback while the modular house builds its navigation grid. These
 # bounds include player clearance around the 7.5 x 3.2 meter kitchen island.
@@ -153,6 +154,7 @@ const FLEE_POINTS: Array[Vector2] = [
 
 
 func _ready() -> void:
+	add_child(preload("res://scripts/spark_trail.gd").new())
 	# Each player gets an independent shape resource before stance changes resize
 	# it; otherwise crouching Player 1 would also shrink the bot's collider.
 	collision_shape.shape = collision_shape.shape.duplicate()
@@ -206,6 +208,8 @@ func set_slot_active(value: bool, replica: bool = false) -> void:
 
 
 func set_has_token(value: bool) -> void:
+	if value != has_token:
+		chase_charge = 0.0
 	has_token = value
 	_refresh_character_visuals()
 
@@ -342,6 +346,7 @@ func apply_slippery(duration: float) -> void:
 
 
 func reset_movement_state() -> void:
+	chase_charge = 0.0
 	_set_highlighted_chair(null)
 	network_movement_input = Vector2.ZERO
 	network_aim_forward = Vector3.FORWARD
@@ -395,6 +400,7 @@ func reset_movement_state() -> void:
 
 
 func respawn_at(spawn_position: Vector3) -> void:
+	chase_charge = 0.0
 	motion_epoch += 1
 	movement_history.clear()
 	_release_chair()
@@ -484,6 +490,7 @@ func _physics_process(delta: float) -> void:
 
 	var should_crouch := not is_stunned and not ai_controlled and (crouch_pressed or slide_time_remaining > 0.0)
 	_set_crouched(should_crouch)
+	_update_chase_charge(delta, input_direction.length_squared() > 0.1 and not should_crouch and not is_stunned)
 
 	if slide_time_remaining > 0.0:
 		slide_time_remaining = maxf(0.0, slide_time_remaining - delta)
@@ -494,6 +501,7 @@ func _physics_process(delta: float) -> void:
 		horizontal_velocity = slide_direction * slide_speed
 	else:
 		var movement_speed := crouch_speed if crouched else max_speed
+		movement_speed *= _chase_speed_multiplier()
 		var desired_velocity := input_direction * movement_speed
 		if input_direction.length_squared() > 0.01:
 			var traction := slippery_steering_factor if slippery_time_remaining > 0.0 else 1.0
@@ -548,6 +556,21 @@ func _physics_process(delta: float) -> void:
 
 	_update_presentation(delta)
 	_record_movement_history(delta)
+
+
+func _update_chase_charge(delta: float, running: bool) -> void:
+	var game = get_tree().current_scene
+	if game == null or not "round_running" in game or not game.round_running or has_token:
+		chase_charge = 0.0
+	else:
+		chase_charge = move_toward(chase_charge, 1.0 if running else 0.0, delta / (6.0 if running else 2.0))
+
+
+func _chase_speed_multiplier() -> float:
+	var game = get_tree().current_scene
+	if game == null or not "round_running" in game or not game.round_running:
+		return 1.0
+	return 0.93 if has_token else (1.0 + 0.15 * chase_charge if not crouched else 1.0)
 
 
 func _update_presentation(delta: float) -> void:

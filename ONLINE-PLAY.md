@@ -1,6 +1,6 @@
-# ATI online play — v0.43 (protocol 12)
+# ATI online play — v0.44 (protocol 13)
 
-v0.43 adds golden spark HUD stars and an animated blue-violet phantom effect for invisibility. The swap bell targets the farthest active opponent without aiming. Each round starts with a randomly selected active spark holder, chosen by the host. Everyone should use the latest build for consistent visuals and rules.
+v0.44 adds traveling sparkler HUD streaks, a golden carrier trail, a small carrier slowdown and a gradually charging chaser running boost. The magnet ends with an outward prop burst; the swap bell has a longer metallic ring. Invisibility hides the trail. Everyone must use v0.44 for compatible movement rules (protocol 13).
 
 ## Direct route comparison
 

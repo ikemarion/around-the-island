@@ -262,6 +262,19 @@ func _finish_magnet() -> void:
 	if spent or replica:
 		return
 	spent = true
+	# Burst only on expiry, not when a target leaves or the round is cleaned up.
+	if remaining <= 0.0 and _active(target_slot):
+		var center: Vector3 = _players()[target_slot].global_position
+		for prop in get_tree().get_nodes_in_group("shoveable"):
+			var away: Vector3 = prop.global_position - center
+			if away.length() > 7.5:
+				continue
+			if is_instance_valid(prop.holder):
+				prop.holder._release_chair()
+			away.y = 0.0
+			if away.length_squared() < 0.01:
+				away = Vector3.RIGHT
+			prop.launch((away.normalized() + Vector3.UP * 0.55).normalized() * prop.mass * 18.0)
 	if is_instance_valid(owner_player):
 		owner_player.magnet_effect = null
 	queue_free()

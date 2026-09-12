@@ -1,5 +1,12 @@
 # Future passes
 
+## 0.44 sparkler chase pass
+
+- Tiny traveling gold HUD streaks and a short, faint world-space golden particle trail; trail clears on invisibility and teleports. Phantom HUD unchanged.
+- Spark carrier runs 7% slower. Chasers build up to 15% extra running speed over six seconds of movement; charge drains over two seconds when stopped/crouched and resets on transfers/respawns. No extra input required; post-match movement remains normal.
+- Magnet still attracts props to the farthest opponent, then flings nearby props outward at expiry (not disconnect/cleanup).
+- Swap bell has a longer metallic strike/ring. Protocol 13 replicates chase charge; all players need this build.
+
 ## 0.43 spark and phantom HUD, bell and start rules
 
 - Local-only animated gold perimeter stars while carrying spark; invisible players see blue-violet flowing haze and rising ghost motes, with no camera distortion.

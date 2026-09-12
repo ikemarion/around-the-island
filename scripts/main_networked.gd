@@ -9,8 +9,8 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 12
-const BUILD_VERSION := "0.43"
+const PROTOCOL_VERSION := 13
+const BUILD_VERSION := "0.44"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -723,7 +723,7 @@ func _update_world_scoreboard() -> void:
 
 func _player_state(slot: int) -> Dictionary:
 	var p := players[slot]
-	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch}
+	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge}
 
 
 func _broadcast_snapshot(reliable_state := false) -> void:
@@ -869,6 +869,7 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 	p.quick_item_cooldown_remaining = float(state.get("cooldown", 0.0))
 	p.stun_time_remaining = float(state.get("stun", 0.0))
 	p.slippery_time_remaining = float(state.get("slippery", 0.0))
+	p.chase_charge = float(state.get("chase_charge", 0.0))
 	p.remote_held_name = str(state.get("held", ""))
 	if not p.client_predicted:
 		p.body_mesh.rotation.y = float(state.get("facing", 0.0))
