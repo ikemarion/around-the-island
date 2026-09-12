@@ -1,4 +1,6 @@
-# ATI online play — v0.42 (protocol 12)
+# ATI online play — v0.43 (protocol 12)
+
+v0.43 adds golden spark HUD stars and an animated blue-violet phantom effect for invisibility. The swap bell targets the farthest active opponent without aiming. Each round starts with a randomly selected active spark holder, chosen by the host. Everyone should use the latest build for consistent visuals and rules.
 
 ## Direct route comparison
 

@@ -1002,10 +1002,10 @@ func _use_air_horn() -> void:
 
 
 func _use_swap_bell() -> void:
-	var target = _find_aimed_player()
+	var target = _find_farthest_active_opponent()
 	if target == null:
 		equipped_spawn_item = &"swap_bell"
-		quick_item_event.emit("Aim at a visible player to swap — item kept.")
+		quick_item_event.emit("No opponent available — item kept.")
 		return
 	var our_position := global_position
 	var our_velocity := velocity

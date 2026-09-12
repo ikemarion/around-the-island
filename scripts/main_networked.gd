@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 12
-const BUILD_VERSION := "0.42"
+const BUILD_VERSION := "0.43"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -633,7 +633,10 @@ func reset_round() -> void:
 	time_remaining = ROUND_DURATION
 	for slot in MAX_PLAYERS:
 		scores[slot] = 0.0
-	token_holder = _first_active_slot()
+	var eligible: Array[int] = []
+	for slot in MAX_PLAYERS:
+		if active_slots[slot]: eligible.append(slot)
+	token_holder = eligible.pick_random() if not eligible.is_empty() else 0
 	tag_cooldown_remaining = 1.0
 	round_running = true
 	for slot in MAX_PLAYERS:

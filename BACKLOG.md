@@ -1,5 +1,12 @@
 # Future passes
 
+## 0.43 spark and phantom HUD, bell and start rules
+
+- Local-only animated gold perimeter stars while carrying spark; invisible players see blue-violet flowing haze and rising ghost motes, with no camera distortion.
+- Swap bell selects farthest active opponent regardless of aim, including invisible opponents. Keeps item when no opponent is available.
+- Host/solo randomly chooses starting spark holder among active slots each round; existing snapshots distribute the choice.
+- State/expiry HUD and bell/random-starter regression tests passed; in-engine preview checked.
+
 ## 0.38 post-match celebration
 
 - Players keep moving and interacting after the buzzer, including remote input/prediction and fall respawns. Scores and spark transfers stop.
