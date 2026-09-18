@@ -1,6 +1,6 @@
-# ATI online play — v0.45 (protocol 14)
+# ATI online play — v0.46 (protocol 14)
 
-v0.45 adds a charged chaser burst: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone must use v0.45 (protocol 14).
+v0.46 refreshes the boxes, car, couch and TV visuals while keeping existing collision and network rules. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone must use v0.46 (protocol 14).
 
 ## Direct route comparison
 

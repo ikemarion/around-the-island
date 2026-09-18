@@ -1,5 +1,12 @@
 # Future passes
 
+## 0.46 house prop visual rebuild
+
+- Shared visual-only prop kit: detailed cardboard cartons with flaps/tape/labels; cream-roofed coral car with curved cabin/glass, fenders, hubcaps and grille; fuller sofa cushions with fitted piping/pillows; cream CRT with rounded glass, tuning knobs, antennas and teal console.
+- Refined using multiple native Godot render passes, then checked in the actual living room and garage. Original collider sizes, static body names and all 12 networked movable props remain unchanged.
+- Protocol remains 14. Reference and native render previews are in docs/art/prop-refresh/.
+
+
 ## 0.45 charged boost and border doors
 
 - F / left bumper activates a five-second 80% chaser running boost after eight seconds of recharge. Compact lightning meter shows charge/duration; authority replicates charge/time and validates activation.

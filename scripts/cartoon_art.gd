@@ -111,14 +111,7 @@ func make_chair(parent: Node3D) -> void:
 	for x in [-0.2,0.2]: ball(parent,Vector3.ONE*0.045,Vector3(x,0.29,0.245),CREAM)
 
 func make_box(parent: Node3D) -> void:
-	box(parent,Vector3.ONE*0.9,Vector3.ZERO,INK)
-	box(parent,Vector3(0.868,0.91,0.868),Vector3.ZERO,Color("c99651"))
-	box(parent,Vector3(0.91,0.868,0.868),Vector3.ZERO,Color("dbae68"))
-	box(parent,Vector3(0.868,0.868,0.91),Vector3.ZERO,Color("dbae68"))
-	box(parent,Vector3(0.17,0.914,0.914),Vector3.ZERO,CREAM)
-	for side in [-1,1]:
-		box(parent,Vector3(0.22,0.06,0.008),Vector3(-0.23,-0.26,side*0.46),INK)
-		box(parent,Vector3(0.045,0.2,0.008),Vector3(-0.23,-0.19,side*0.46),INK)
+	preload("res://scripts/house_prop_art.gd").make_box(parent)
 
 func make_character(player: ATIPlayer) -> void:
 	var body: MeshInstance3D = player.body_mesh

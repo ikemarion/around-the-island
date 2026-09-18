@@ -204,14 +204,7 @@ func _build_living_room(parent: Node3D) -> void:
 	_box(rug, Vector3(7.9, 0.008, 4.5), Vector3(0, 0.012, 0), Color("eac798"), "RugBorder")
 	_box(rug, Vector3(7.5, 0.008, 4.1), Vector3(0, 0.018, 0), Color("6caaa0"), "RugCenter")
 	var couch := _solid(parent, "Couch", Vector3(5.0, 1.45, 1.55), Vector3(0, 0.725, 0.85), CORAL, false)
-	_box(couch, Vector3(4.8, 0.45, 1.35), Vector3(0, -0.17, 0), INK, "SofaBase")
-	_ball(couch, Vector3(4.75, 1.05, 0.62), Vector3(0, 0.12, 0.55), CORAL, "SofaBack")
-	for index in 3:
-		_ball(couch, Vector3(1.45, 0.48, 1.2), Vector3(-1.48 + index * 1.48, -0.0, -0.06), Color("f09372"), "SeatCushion")
-		_ball(couch, Vector3(0.09, 0.12, 0.05), Vector3(-1.48 + index * 1.48, 0.25, 0.24), GOLD, "UpholsteryButton")
-	for side in [-1, 1]:
-		_ball(couch, Vector3(0.62, 1.05, 1.55), Vector3(side * 2.15, -0.04, 0), CORAL, "SofaArm")
-		_ball(couch, Vector3(0.72, 0.63, 0.3), Vector3(side * 1.5, 0.35, 0.23), GOLD, "ThrowPillow")
+	preload("res://scripts/house_prop_art.gd").make_couch(couch)
 	var table := _solid(parent, "CoffeeTable", Vector3(2.9, 0.65, 1.15), Vector3(0, 0.325, -1.45), GOLD, false)
 	_ball(table, Vector3(3.0, 0.23, 1.3), Vector3(0, 0.22, 0), GOLD, "TableTop")
 	for x in [-1.0, 1.0]:
@@ -219,13 +212,10 @@ func _build_living_room(parent: Node3D) -> void:
 			_cylinder(table, 0.075, 0.54, Vector3(x, -0.03, z), INK, "TableLeg")
 	_box(table, Vector3(0.48, 0.035, 0.38), Vector3(-0.4, 0.35, 0.02), CORAL, "Magazine")
 	_cylinder(table, 0.12, 0.19, Vector3(0.56, 0.41, 0), CREAM, "Mug")
-	var tv := _solid(parent, "TVConsole", Vector3(3.6, 0.75, 0.9), Vector3(0, 0.375, -5.08), GOLD)
-	for side in [-1, 1]:
-		_box(tv, Vector3(1.55, 0.54, 0.035), Vector3(side * 0.88, 0.03, 0.46), TEAL, "CabinetDoor")
-		_ball(tv, Vector3.ONE * 0.12, Vector3(side * 0.23, 0.08, 0.49), CREAM, "CabinetKnob")
-	_solid(parent, "Television", Vector3(2.5, 1.25, 0.3), Vector3(0, 1.38, -5.15), INK)
-	_ball(parent, Vector3(2.28, 1.08, 0.07), Vector3(0, 1.39, -4.975), Color("96cbca"), "TVScreen")
-	_label(parent, "TOON TIME", Vector3(0, 1.37, -4.92))
+	var tv := _solid(parent, "TVConsole", Vector3(3.6, 0.75, 0.9), Vector3(0, 0.375, -5.08), GOLD, false)
+	preload("res://scripts/house_prop_art.gd").make_tv_console(tv)
+	var screen := _solid(parent, "Television", Vector3(2.5, 1.25, 0.3), Vector3(0, 1.38, -5.15), INK, false)
+	preload("res://scripts/house_prop_art.gd").make_tv(screen)
 	var ottoman := _prop(parent, "Ottoman", Vector3(-3.65, 0.55, 1.05))
 	_ball(ottoman, Vector3(0.9, 0.75, 0.9), Vector3(0, -0.075, 0), CORAL, "Upholstery")
 	_ball(ottoman, Vector3(0.83, 0.27, 0.83), Vector3(0, 0.28, 0), Color("f09372"), "Cushion")
@@ -249,19 +239,7 @@ func _build_garage(parent: Node3D) -> void:
 	for side in [-1, 1]:
 		_box(parent, Vector3(6.6, 0.01, 0.08), Vector3(0, 0.009, side * 1.8), GOLD, "ParkingStripe")
 	var car := _solid(parent, "ProjectCar", Vector3(5.4, 1.65, 2.55), Vector3(0, 0.825, 0), CORAL, false)
-	_ball(car, Vector3(5.4, 1.15, 2.5), Vector3(0, -0.2, 0), CORAL, "CarBody")
-	_ball(car, Vector3(2.6, 1.3, 2.1), Vector3(-0.25, 0.35, 0), Color("f09372"), "CarRoof")
-	for side in [-1, 1]:
-		_ball(car, Vector3(2.1, 0.74, 0.1), Vector3(-0.25, 0.41, side * 0.98), Color("b2deda"), "CarWindow")
-		_box(car, Vector3(0.08, 0.66, 0.06), Vector3(-0.25, 0.41, side * 1.04), CREAM, "WindowDivider")
-		_box(car, Vector3(0.35, 0.07, 0.08), Vector3(-0.6, -0.08, side * 1.22), CREAM, "DoorHandle")
-		for x in [-1.7, 1.7]:
-			var wheel := _cylinder(car, 0.47, 0.17, Vector3(x, -0.32, side * 1.2), INK, "Wheel")
-			wheel.rotation.x = PI / 2.0
-			var hub := _cylinder(car, 0.22, 0.18, Vector3(x, -0.32, side * 1.27), CREAM, "Hubcap")
-			hub.rotation.x = PI / 2.0
-		_ball(car, Vector3(0.12, 0.29, 0.47), Vector3(2.57, -0.14, side * 0.72), CREAM, "Headlight")
-	_box(car, Vector3(0.12, 0.18, 1.75), Vector3(2.65, -0.38, 0), TEAL, "Bumper")
+	preload("res://scripts/house_prop_art.gd").make_car(car)
 	var bench := _solid(parent, "Workbench", Vector3(5.5, 1.0, 1.1), Vector3(0, 0.5, -5.15), TEAL)
 	_box(bench, Vector3(5.7, 0.13, 1.2), Vector3(0, 0.53, 0), GOLD, "WoodTop")
 	for index in 4:
