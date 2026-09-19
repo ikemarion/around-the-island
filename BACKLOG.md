@@ -1,5 +1,12 @@
 # Future passes
 
+## 0.48 double speed pickup
+
+- Added 2× Speed to the random pool with a coral sneaker icon. Q / RB activates five seconds of doubled run/crouch speed, with a HUD countdown.
+- Carrier slowdown remains proportional; charged boost does not multiply with x2 or consume its charge while x2 is active. Repeated pickups refresh duration rather than multiply speed.
+- Host replicates duration; expiry, respawn and session reset clear the effect. Protocol 16.
+
+
 ## 0.47 buddy vanish and footsteps
 
 - Activating Decoy Double hides its user for four seconds without hiding the visible buddy. Releases held props on activation.

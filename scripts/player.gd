@@ -128,6 +128,7 @@ var equipped_spawn_item: StringName = &""
 var stun_time_remaining: float = 0.0
 var invisibility_time_remaining: float = 0.0
 var buddy_hide_time := 0.0
+var double_speed_time := 0.0
 var sfx_players: Array[AudioStreamPlayer3D] = []
 var body_material: StandardMaterial3D
 var body_color := Color.WHITE
@@ -250,6 +251,7 @@ func get_quick_item_cooldown() -> float:
 
 
 func get_quick_item_name() -> String:
+	if equipped_spawn_item == &"double_speed": return "2× SPEED"
 	if get_magnet_time() > 0.0:
 		return "MAGNET MAYHEM"
 	if CHAOS_NAMES.has(equipped_spawn_item):
@@ -265,6 +267,7 @@ func get_quick_item_name() -> String:
 
 
 func get_quick_item_state() -> String:
+	if equipped_spawn_item == &"double_speed": return "DOUBLE SPEED — Q / RB"
 	if get_magnet_time() > 0.0:
 		return "FARTHEST RIVAL MAGNETIZED %.1fs" % get_magnet_time()
 	if CHAOS_NAMES.has(equipped_spawn_item):
@@ -282,6 +285,7 @@ func get_quick_item_state() -> String:
 
 
 func get_quick_item_color() -> Color:
+	if equipped_spawn_item == &"double_speed": return Color("ffbf45")
 	if CHAOS_NAMES.has(equipped_spawn_item) or get_magnet_time() > 0.0:
 		return Color("ff9cdd")
 	match equipped_spawn_item:
@@ -352,6 +356,7 @@ func apply_slippery(duration: float) -> void:
 
 
 func reset_movement_state() -> void:
+	double_speed_time = 0.0
 	buddy_hide_time = 0.0
 	chase_charge = 0.0
 	boost_time = 0.0
@@ -409,6 +414,7 @@ func reset_movement_state() -> void:
 
 
 func respawn_at(spawn_position: Vector3) -> void:
+	double_speed_time = 0.0
 	buddy_hide_time = 0.0
 	_refresh_character_visuals()
 	chase_charge = 0.0
@@ -469,6 +475,7 @@ func _physics_process(delta: float) -> void:
 	slippery_time_remaining = maxf(0.0, slippery_time_remaining - delta)
 	stun_time_remaining = maxf(0.0, stun_time_remaining - delta)
 	var was_invisible := is_invisible()
+	double_speed_time = maxf(0.0, double_speed_time - delta)
 	buddy_hide_time = maxf(0.0, buddy_hide_time - delta)
 	invisibility_time_remaining = maxf(0.0, invisibility_time_remaining - delta)
 	if was_invisible != is_invisible():
@@ -591,6 +598,8 @@ func _update_chase_charge(delta: float, _running: bool) -> void:
 
 func _chase_speed_multiplier() -> float:
 	var game = get_tree().current_scene
+	if double_speed_time > 0.0:
+		return 2.0 * (0.93 if game != null and game.round_running and has_token else 1.0)
 	if game == null or not "round_running" in game or not game.round_running:
 		return 1.0
 	return 0.93 if has_token else (1.8 if boost_time > 0.0 and not crouched else 1.0)
@@ -605,7 +614,7 @@ func _is_boost_pressed() -> bool:
 
 
 func _try_boost(direction: Vector2) -> bool:
-	if chase_charge < 1.0 or has_token or boost_time > 0.0 or stun_time_remaining > 0.0 or crouched or not get_tree().current_scene.round_running:
+	if chase_charge < 1.0 or has_token or boost_time > 0.0 or double_speed_time > 0.0 or stun_time_remaining > 0.0 or crouched or not get_tree().current_scene.round_running:
 		return false
 	chase_charge = 0.0
 	boost_time = 5.0
@@ -954,6 +963,10 @@ func _use_equipped_spawn_item() -> void:
 	var item_type := equipped_spawn_item
 	equipped_spawn_item = &""
 	match item_type:
+		&"double_speed":
+			double_speed_time = 5.0
+			_play_sfx("pickup")
+			quick_item_event.emit("2× SPEED — five seconds!")
 		&"stun_gun": _fire_stun_gun()
 		&"air_horn": _use_air_horn()
 		&"swap_bell": _use_swap_bell()

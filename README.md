@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.47 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.47-Windows.zip), extract it, and run the included ATI executable. Protocol 15: everyone must update. New: the buddy hides its user for four seconds while remaining visible; moving leaves fading footprints. Normal invisibility stays footprint-free. Charged chaser boost remains F / left bumper. Direct Internet joining requires a reachable public IP and UDP forwarding; normal Join still uses Playit. Joining automatically shares unsent ATI diagnostics with the configured host. See [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md).
+Download [ATI v0.48 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.48-Windows.zip), extract it, and run the included ATI executable. Protocol 16: everyone must update. New: 2× Speed sneaker pickup doubles running/crouching speed for five seconds, activated with Q / right bumper. No stacking with the charged chaser boost. Charged chaser boost remains F / left bumper. Direct Internet joining requires a reachable public IP and UDP forwarding; normal Join still uses Playit. Joining automatically shares unsent ATI diagnostics with the configured host. See [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md).
 
 The configured host opens **Host lobby** and keeps Playit running. Friends choose **Join lobby**; no code or additional networking software is required. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the current hosting limitations and troubleshooting notes.
 

@@ -1,6 +1,6 @@
-# ATI online play — v0.47 (protocol 15)
+# ATI online play — v0.48 (protocol 16)
 
-v0.47 makes the buddy hide its user for four seconds while the decoy remains visible. Other players see fading footprints when the user moves on the ground. This is independent of regular invisibility. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone must use v0.47 (protocol 15).
+v0.48 adds a five-second 2× Speed sneaker pickup (Q / right bumper), synchronized by the host. It does not stack with the charged chaser boost. The buddy hides its user for four seconds while the decoy remains visible. Other players see fading footprints when the user moves on the ground. This is independent of regular invisibility. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone must use v0.48 (protocol 16).
 
 ## Direct route comparison
 

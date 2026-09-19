@@ -8,6 +8,7 @@ func run() -> void:
 	root.add_child(main)
 	current_scene = main
 	var host := "--lifecycle-host" in OS.get_cmdline_user_args()
+	var speed_test := "--speed-test" in OS.get_cmdline_user_args()
 	if host:
 		main._prepare_session()
 		main.session_mode = &"hosting"
@@ -26,7 +27,7 @@ func run() -> void:
 				var effect = load("res://scripts/chaos_effect.gd").new()
 				main.add_child(effect)
 				effect.setup(kind, main.players[0], main.players[1])
-			main.players[1].equipped_spawn_item = &"decoy_double"
+			main.players[1].equipped_spawn_item = &"double_speed" if speed_test else &"decoy_double"
 			main.token_holder = 0
 			main._set_token_holder(0)
 			main.players[1].chase_charge = 1.0
@@ -62,17 +63,23 @@ func run() -> void:
 			event.pressed = false
 			Input.parse_input_event(event)
 			await create_timer(0.25, true).timeout
-			check(main.players[1].is_invisible(), "Client quick action failed")
-			check(main.players[1].buddy_hide_time > 0.0, "Buddy invisibility failed to replicate")
-			check(main.players[1].invisibility_time_remaining == 0.0, "Buddy changed normal invisibility timer")
-			check(main.get_tree().get_nodes_in_group("chaos_decoy").any(func(d): return d.visible), "Buddy not visible on client")
+			if speed_test:
+				check(main.players[1].double_speed_time > 0.0 and main.players[1]._chase_speed_multiplier() == 2.0, "Remote x2 speed failed")
+			else:
+				check(main.players[1].is_invisible(), "Client quick action failed")
+				check(main.players[1].buddy_hide_time > 0.0, "Buddy invisibility failed to replicate")
+				check(main.players[1].invisibility_time_remaining == 0.0, "Buddy changed normal invisibility timer")
+				check(main.get_tree().get_nodes_in_group("chaos_decoy").any(func(d): return d.visible), "Buddy not visible on client")
 			event.physical_keycode = KEY_F
 			event.pressed = true
 			Input.parse_input_event(event)
 			await create_timer(0.15,true).timeout
 			event.pressed = false
 			Input.parse_input_event(event)
-			check(main.players[1].boost_time > 0.0, "Client charged boost failed")
+			if speed_test:
+				check(main.players[1].boost_time == 0.0 and main.players[1].chase_charge >= 0.99, "X2 pickup consumed charged boost")
+			else:
+				check(main.players[1].boost_time > 0.0, "Client charged boost failed")
 			main._enter_lobby()
 			await create_timer(0.4, true).timeout
 		print("NETWORK_LIFECYCLE client: rejoin, effects and quick action passed")

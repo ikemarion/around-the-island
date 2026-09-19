@@ -4,6 +4,7 @@ extends Node3D
 const STUN_GUN_PICKUP := preload("res://scenes/stun_gun_pickup.tscn")
 const GENERIC_PICKUP := preload("res://scenes/generic_powerup_pickup.tscn")
 const ITEM_POOL: Array[StringName] = [
+	&"double_speed",
 	&"stun_gun",
 	&"air_horn",
 	&"swap_bell",
@@ -16,6 +17,7 @@ const ITEM_POOL: Array[StringName] = [
 	&"hot_potato",
 ]
 const ITEM_NAMES := {
+	&"double_speed": "2× SPEED",
 	&"stun_gun": "STUN GUN",
 	&"air_horn": "AIR HORN",
 	&"swap_bell": "SWAP BELL",
@@ -29,6 +31,7 @@ const ITEM_NAMES := {
 	&"bungee_hook": "BUNGEE HOOK",
 }
 const ITEM_COLORS := {
+	&"double_speed": Color("ffbf45"),
 	&"stun_gun": Color("ffe56b"),
 	&"air_horn": Color("df7856"),
 	&"swap_bell": Color("efae28"),

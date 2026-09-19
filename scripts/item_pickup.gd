@@ -119,6 +119,7 @@ func _build_item_art(color: Color) -> void:
 	art.set_meta("item_type", String(item_type))
 	add_child(art)
 	match item_type:
+		&"double_speed": _make_speed_shoe(art)
 		&"stun_gun": _make_stun_gun(art, color)
 		&"air_horn": _make_air_horn(art, color)
 		&"swap_bell": _make_bell(art, color)
@@ -131,6 +132,26 @@ func _build_item_art(color: Color) -> void:
 		&"hot_potato": _make_potato(art, color)
 		&"bungee_hook": _make_bungee(art, color)
 		_: _ball(art, Vector3.ONE * 0.55, Vector3.ZERO, color, "Fallback")
+
+
+func _make_speed_shoe(art: Node3D) -> void:
+	var kit = preload("res://scripts/house_prop_art.gd")
+	kit.box(art,Vector3(0.80,0.14,0.40),Vector3(0,-0.22,0),CREAM,"SneakerSole",0.065)
+	kit.box(art,Vector3(0.71,0.26,0.36),Vector3(0,-0.05,0),Color("df7856"),"SneakerUpper",0.12)
+	kit.box(art,Vector3(0.30,0.35,0.33),Vector3(-0.21,0.13,0),Color("df7856"),"SneakerHeel",0.12)
+	kit.ball(art,Vector3(0.20,0.035,0.23),Vector3(-0.21,0.305,0),INK,"ShoeOpening")
+	for x in [-0.06,0.03,0.12]:
+		kit.box(art,Vector3(0.035,0.025,0.25),Vector3(x,0.08,0),CREAM,"Laces",0.01)
+	for side in [-1,1]:
+		var badge := Label3D.new()
+		badge.text = "2×"
+		badge.font_size = 64
+		badge.pixel_size = 0.003
+		badge.outline_size = 0
+		badge.modulate = Color("ffe06a")
+		badge.position = Vector3(0,-0.055,side*0.19)
+		badge.rotation.y = PI if side < 0 else 0.0
+		art.add_child(badge)
 
 
 func _make_stun_gun(art: Node3D, color: Color) -> void:

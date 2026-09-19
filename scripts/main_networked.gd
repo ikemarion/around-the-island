@@ -9,8 +9,8 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 15
-const BUILD_VERSION := "0.47"
+const PROTOCOL_VERSION := 16
+const BUILD_VERSION := "0.48"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -724,7 +724,7 @@ func _update_world_scoreboard() -> void:
 
 func _player_state(slot: int) -> Dictionary:
 	var p := players[slot]
-	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time}
+	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time, "double_speed": p.double_speed_time}
 
 
 func _broadcast_snapshot(reliable_state := false) -> void:
@@ -865,6 +865,7 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 		p.replica_target_ready = false
 	p.apply_authoritative_motion(state)
 	p.equipped_spawn_item = state.item
+	p.double_speed_time = float(state.get("double_speed",0.0))
 	p.buddy_hide_time = float(state.get("buddy_hide",0.0))
 	p.set_network_invisibility(float(state.invisibility))
 	p.remote_magnet_time = float(state.get("magnet", 0.0))

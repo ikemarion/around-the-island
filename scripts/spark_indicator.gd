@@ -39,6 +39,10 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	if is_instance_valid(game) and game.local_slot >= 0:
+		var time_left: float = game.players[game.local_slot].double_speed_time
+		if time_left > 0.0:
+			draw_string(ThemeDB.fallback_font,Vector2(size.x*0.5-43,size.y*0.85),"2×  %.1fs" % time_left,HORIZONTAL_ALIGNMENT_LEFT,-1,22,Color(1,0.85,0.35))
 	if is_instance_valid(game) and game.local_slot >= 0 and not carrying:
 		var player = game.players[game.local_slot]
 		var fraction: float = player.boost_time / 5.0 if player.boost_time > 0.0 else player.chase_charge
