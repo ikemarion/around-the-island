@@ -26,7 +26,7 @@ func run() -> void:
 				var effect = load("res://scripts/chaos_effect.gd").new()
 				main.add_child(effect)
 				effect.setup(kind, main.players[0], main.players[1])
-			main.players[1].equipped_spawn_item = &"invisibility"
+			main.players[1].equipped_spawn_item = &"decoy_double"
 			main.token_holder = 0
 			main._set_token_holder(0)
 			main.players[1].chase_charge = 1.0
@@ -63,6 +63,9 @@ func run() -> void:
 			Input.parse_input_event(event)
 			await create_timer(0.25, true).timeout
 			check(main.players[1].is_invisible(), "Client quick action failed")
+			check(main.players[1].buddy_hide_time > 0.0, "Buddy invisibility failed to replicate")
+			check(main.players[1].invisibility_time_remaining == 0.0, "Buddy changed normal invisibility timer")
+			check(main.get_tree().get_nodes_in_group("chaos_decoy").any(func(d): return d.visible), "Buddy not visible on client")
 			event.physical_keycode = KEY_F
 			event.pressed = true
 			Input.parse_input_event(event)

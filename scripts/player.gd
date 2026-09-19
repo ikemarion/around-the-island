@@ -127,6 +127,7 @@ var quick_item_cooldown_remaining: float = 0.0
 var equipped_spawn_item: StringName = &""
 var stun_time_remaining: float = 0.0
 var invisibility_time_remaining: float = 0.0
+var buddy_hide_time := 0.0
 var sfx_players: Array[AudioStreamPlayer3D] = []
 var body_material: StandardMaterial3D
 var body_color := Color.WHITE
@@ -157,6 +158,7 @@ const FLEE_POINTS: Array[Vector2] = [
 
 
 func _ready() -> void:
+	add_child(preload("res://scripts/buddy_footsteps.gd").new())
 	add_child(preload("res://scripts/spark_trail.gd").new())
 	# Each player gets an independent shape resource before stance changes resize
 	# it; otherwise crouching Player 1 would also shrink the bot's collider.
@@ -229,7 +231,7 @@ func set_network_invisibility(time_left: float) -> void:
 
 
 func is_invisible() -> bool:
-	return invisibility_time_remaining > 0.0
+	return invisibility_time_remaining > 0.0 or buddy_hide_time > 0.0
 
 
 func _refresh_character_visuals() -> void:
@@ -275,7 +277,7 @@ func get_quick_item_state() -> String:
 		&"rewind_watch": return "ONE SHOT — REWIND WITH Q"
 		&"emergency_door": return "ONE SHOT — OPEN WITH Q"
 	if is_invisible():
-		return "HIDDEN  %.1fs" % invisibility_time_remaining
+		return "HIDDEN  %.1fs" % maxf(invisibility_time_remaining,buddy_hide_time)
 	return "FIND A PICKUP"
 
 
@@ -298,7 +300,7 @@ func get_quick_item_readiness() -> float:
 	if has_spawn_item():
 		return 1.0
 	if is_invisible():
-		return clampf(invisibility_time_remaining / invisibility_duration, 0.0, 1.0)
+		return clampf(maxf(invisibility_time_remaining / invisibility_duration,buddy_hide_time / 4.0), 0.0, 1.0)
 	return 0.0
 
 
@@ -350,6 +352,7 @@ func apply_slippery(duration: float) -> void:
 
 
 func reset_movement_state() -> void:
+	buddy_hide_time = 0.0
 	chase_charge = 0.0
 	boost_time = 0.0
 	boost_was_pressed = false
@@ -406,6 +409,8 @@ func reset_movement_state() -> void:
 
 
 func respawn_at(spawn_position: Vector3) -> void:
+	buddy_hide_time = 0.0
+	_refresh_character_visuals()
 	chase_charge = 0.0
 	boost_time = 0.0
 	motion_epoch += 1
@@ -464,6 +469,7 @@ func _physics_process(delta: float) -> void:
 	slippery_time_remaining = maxf(0.0, slippery_time_remaining - delta)
 	stun_time_remaining = maxf(0.0, stun_time_remaining - delta)
 	var was_invisible := is_invisible()
+	buddy_hide_time = maxf(0.0, buddy_hide_time - delta)
 	invisibility_time_remaining = maxf(0.0, invisibility_time_remaining - delta)
 	if was_invisible != is_invisible():
 		_refresh_character_visuals()
@@ -1005,6 +1011,10 @@ func _use_chaos_effect(kind: StringName) -> void:
 	var effect := CHAOS_EFFECT.new()
 	get_tree().current_scene.add_child(effect)
 	effect.setup(kind, self, target)
+	if kind == &"decoy_double":
+		buddy_hide_time = 4.0
+		_release_chair()
+		_refresh_character_visuals()
 	_play_sfx("deploy")
 	if kind == &"magnet_mayhem":
 		quick_item_event.emit("MAGNET MAYHEM! P%d is attracting every loose prop." % (target.player_index + 1))

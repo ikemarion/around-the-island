@@ -1,5 +1,13 @@
 # Future passes
 
+## 0.47 buddy vanish and footsteps
+
+- Activating Decoy Double hides its user for four seconds without hiding the visible buddy. Releases held props on activation.
+- Alternating mint sole/heel prints show the moving user’s grounded route, fading over 1.4 seconds. Local reconstruction from replicated positions avoids particle/footprint network traffic.
+- Dedicated replicated buddy timer keeps normal invisibility independent; trail clears on expiry, teleport, respawn, inactive slot or session reset.
+- Protocol 15. Source and multiplayer lifecycle tests cover buddy use and replication.
+
+
 ## 0.46 house prop visual rebuild
 
 - Shared visual-only prop kit: detailed cardboard cartons with flaps/tape/labels; cream-roofed coral car with curved cabin/glass, fenders, hubcaps and grille; fuller sofa cushions with fitted piping/pillows; cream CRT with rounded glass, tuning knobs, antennas and teal console.
