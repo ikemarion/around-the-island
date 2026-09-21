@@ -1,5 +1,13 @@
 # Future passes
 
+## 0.49 kitchen visual refresh
+
+- Rounded cream countertop with honeywood edge, recessed teal cabinet panels, brass-toned pulls and a shadowed toe kick. Bowl of oranges and a coral kettle dress the ends while keeping the score lanes clear.
+- Larger, softer apricot/cream checkerboard tiles with narrow anti-aliased seams and a calm border. Neutral lighting replaces the strong yellow cast.
+- Rounded wooden chair seat/back, teal splayed legs and brass pegs; matching wall paneling, wood caps and cream divider plaster.
+- Visual-only art preserves the original island/no-hop collider, all floor and doorway collision geometry, 12 movable props and network IDs. No protocol change (16).
+- Verified actual Godot captures, cabinet meshes, chair collision envelope, prior house props, buddy/speed rules and post-match flow. WAN reliability is not established by local tests.
+
 ## 0.48 double speed pickup
 
 - Added 2× Speed to the random pool with a coral sneaker icon. Q / RB activates five seconds of doubled run/crouch speed, with a HUD countdown.

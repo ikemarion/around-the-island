@@ -54,10 +54,12 @@ func _ready() -> void:
 	name = "CartoonArt"
 	var env: Environment = game.get_node("WorldEnvironment").environment
 	env.background_color = Color("a6d3cd")
-	env.ambient_light_color = CREAM
-	env.ambient_light_energy = 0.35
+	# Neutral fill lets cream/wood read as materials rather than yellow light.
+	env.ambient_light_color = Color("e8edf0")
+	env.ambient_light_energy = 0.48
 	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-	game.get_node("DirectionalLight3D").light_energy = 0.65
+	game.get_node("DirectionalLight3D").light_color = Color("fff5e7")
+	game.get_node("DirectionalLight3D").light_energy = 0.48
 	game.get_node("Arena/Floor/MeshInstance3D").material_override = material(Color("d4b87c"))
 	# Tile seams are drawn into one shader, rather than hundreds of meshes.
 	var tiles := ShaderMaterial.new()
@@ -65,19 +67,11 @@ func _ready() -> void:
 	game.get_node("Arena/Floor/MeshInstance3D").material_override = tiles
 	var island: Node3D = game.get_node("Arena/Island")
 	island.get_node("MeshInstance3D").hide()
-	box(island, Vector3(7.45,0.78,3.15),Vector3(0,-0.04,0),TEAL)
-	box(island, Vector3(7.5,0.03,3.2),Vector3(0,0.37,0),INK)
-	box(island, Vector3(7.5,0.09,3.2),Vector3(0,0.43,0),CREAM)
-	box(island, Vector3(7.48,0.12,3.18),Vector3(0,-0.4,0),INK)
-	for side in [-1,1]:
-		for index in 6:
-			var x := -3.1 + index*1.24
-			box(island,Vector3(1.13,0.64,0.025),Vector3(x,-0.01,side*1.602),INK)
-			box(island,Vector3(1.07,0.58,0.026),Vector3(x,-0.01,side*1.617),TEAL.lightened(0.08))
-			box(island,Vector3(0.3,0.055,0.07),Vector3(x,0.19,side*1.645),CREAM)
+	preload("res://scripts/kitchen_art.gd").make_island(island)
 	for wall_name in ["NorthWall","SouthWall","EastWall","WestWall"]:
 		for part in game.get_node("Arena/"+wall_name).find_children("*", "MeshInstance3D", true, false):
-			part.material_override = material(TEAL)
+			part.material_override = material(Color("54847a"))
+	preload("res://scripts/kitchen_art.gd").dress_boundaries(game.get_node("Arena"))
 	for obstacle in get_tree().get_nodes_in_group("shoveable"):
 		if obstacle.has_node("CartoonProp"):
 			continue
@@ -99,16 +93,7 @@ func _ready() -> void:
 		label.add_theme_constant_override("outline_size", 4)
 
 func make_chair(parent: Node3D) -> void:
-	# Stay within the original 0.9m collision envelope, including the back.
-	box(parent,Vector3(0.84,0.14,0.82),Vector3(0,-0.04,0),INK)
-	box(parent,Vector3(0.79,0.1,0.77),Vector3(0,0.02,0),ORANGE)
-	for x in [-0.32,0.32]:
-		for z in [-0.3,0.3]:
-			box(parent,Vector3(0.1,0.35,0.1),Vector3(x,-0.265,z),INK)
-		box(parent,Vector3(0.08,0.37,0.08),Vector3(x,0.22,0.34),INK)
-	box(parent,Vector3(0.84,0.31,0.11),Vector3(0,0.29,0.34),INK)
-	box(parent,Vector3(0.75,0.24,0.035),Vector3(0,0.29,0.273),ORANGE)
-	for x in [-0.2,0.2]: ball(parent,Vector3.ONE*0.045,Vector3(x,0.29,0.245),CREAM)
+	preload("res://scripts/kitchen_art.gd").make_chair(parent)
 
 func make_box(parent: Node3D) -> void:
 	preload("res://scripts/house_prop_art.gd").make_box(parent)
