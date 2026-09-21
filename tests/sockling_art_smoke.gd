@@ -30,13 +30,27 @@ func run() -> void:
 		assert(is_equal_approx(player.collision_shape.shape.height,1.6))
 		assert(art.find_children("*","CollisionObject3D",true,false).is_empty())
 		assert(art.has_node("Puppet/Head/UpperMuzzle"))
+		assert(art.sculpt_body.mesh.get_blend_shape_count() == 1)
+		assert(art.sculpt_body.mesh.get_blend_shape_name(0) == "JawOpen")
+		assert(art.sculpt_body.has_node("CloseUpFleece"))
+		assert(art.sculpt_body.get_node("CloseUpFleece").visibility_range_end == 7.0)
+		assert(art.skin_materials.size() == 3)
 		assert(art.has_node("Puppet/Head/LowerJaw/Tongue"))
 		assert(art.has_node("Puppet/KnittedWaistband/RibbedCuff"))
 		assert(not materials.has(art.fleece))
 		assert(art.find_children("*","MeshInstance3D",true,false).size() < 70)
 		materials.append(art.fleece)
+		var triangles := 0
 		for mesh in art.find_children("*","MeshInstance3D",true,false):
 			assert(mesh.mesh != null and mesh.mesh.get_aabb().size.is_finite())
+			for surface in mesh.mesh.get_surface_count():
+				var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+				triangles += (arrays[Mesh.ARRAY_INDEX].size() if arrays[Mesh.ARRAY_INDEX] != null and not arrays[Mesh.ARRAY_INDEX].is_empty() else arrays[Mesh.ARRAY_VERTEX].size())/3
+		assert(triangles < 100000,"Base sculpt should stay within its geometry budget")
+		var tips := 0
+		for nap in art.find_children("*","MultiMeshInstance3D",true,false):
+			tips += nap.multimesh.instance_count
+		assert(tips == 5800)
 		player.set_network_invisibility(5.0)
 		assert(not art.is_visible_in_tree())
 		player.set_network_invisibility(0)
@@ -54,10 +68,13 @@ func run() -> void:
 		assert(player.body_mesh.scale.y == 1)
 		art.animate(0.15,7.0,false,false,true)
 		assert(art.fleece.get_shader_parameter("stunned") == 1.0)
+		for skin in art.skin_materials:
+			assert(skin.get_shader_parameter("stunned") == 1.0)
 		art.animate(0.15,7.0,true,false,false)
 		assert(art.arms[0].rotation.x < -0.9)
 		assert(art.fleece.get_shader_parameter("stunned") == 0.0)
 		art.animate(0.2,4.0,false,false,false)
+		assert(art.sculpt_body.get_blend_shape_value(0) > 0.0)
 	if DisplayServer.get_name() != "headless":
 		# Staged model captures in the actual level; keep nearby loose boxes
 		# from rolling into the character showcase while physics is suspended.
@@ -80,6 +97,15 @@ func run() -> void:
 		main.camera.position = Vector3(-2.9,1.4,4.6)
 		main.camera.look_at(Vector3(0,0.9,3.3))
 		await capture("sockling-side")
+		var puppet = gold.body_mesh.get_node("Sockling")
+		puppet.phase = 0.1
+		puppet.animate(0.1,0,true,false,false)
+		await capture("sockling-holding")
+		main.camera.position = Vector3(2.4,1.6,6.6)
+		main.camera.look_at(Vector3(0,0.9,3.3))
+		puppet.phase = 0.5
+		puppet.animate(0.10,6.2,false,false,false)
+		await capture("sockling-run")
 		for index in 4:
 			var player: ATIPlayer = main.players[index]
 			player.visible = true

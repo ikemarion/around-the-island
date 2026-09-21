@@ -5,6 +5,14 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.51 Sockling sculpt refinement
+
+- Rebuilt the head, neck and torso as a continuous Blender sculpt with a real recessed mouth and a jaw morph that deforms the lining and lips together. Replaced bead fingers with connected soft hands and refined the asymmetric arms, bent legs, padded feet and smaller eyes against the approved roster.
+- Stable fibre bump shading, knit stitches, a thicker striped cuff and cached close-up fleece tips add fabric detail. Fibre geometry disappears beyond seven metres; base sculpt stays below 100k triangles per character. No gameplay simulation or network traffic added.
+- Blender authoring file and repeatable builder are in `tools/`; the GLB is the runtime asset. Source `.blend` is excluded from game exports.
+- Repeated actual-level render checks and tests cover morphs, geometry budgets, four colors, first-person/normal/buddy hiding, crouch, stun and holding/running. Local host/client join/rejoin/effects passed; no WAN reliability or low-end hardware benchmark claimed.
+- Staged Godot captures: `docs/art/socklings/v051/`. Soft cinematic concept lighting is not reproduced exactly by the game's directional lighting.
+
 ## 0.50 Sockling player model
 
 - Replaced capsule characters with color-coded fleece puppets: raised ivory eyes, rounded upper muzzle, recessed mouth/tongue, animated lower jaw, floppy arms, three-finger hands, ribbed striped cuffs and coral feet.
