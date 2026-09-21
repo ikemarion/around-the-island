@@ -1,5 +1,17 @@
 # Future passes
 
+## Character roster rollout
+
+- Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
+- Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
+
+## 0.50 Sockling player model
+
+- Replaced capsule characters with color-coded fleece puppets: raised ivory eyes, rounded upper muzzle, recessed mouth/tongue, animated lower jaw, floppy arms, three-finger hands, ribbed striped cuffs and coral feet.
+- Walk sway, limb swing, airborne and holding poses are local presentation from observed movement. No animation packets or changes to player hitboxes, speeds, camera, abilities or protocol 16.
+- All parts inherit BodyMesh facing, crouch and visibility. Verified first-person hiding, normal/buddy invisibility, independent stun material, four colors and local host/client join/rejoin/effects.
+- Refined mouth and cuff through repeated actual-level Godot captures; procedural fleece is a lightweight approximation of the mockup texture, not strand fur. Staged captures hide loose props and scores for inspection.
+
 ## 0.49 kitchen visual refresh
 
 - Rounded cream countertop with honeywood edge, recessed teal cabinet panels, brass-toned pulls and a shadowed toe kick. Bowl of oranges and a coral kettle dress the ends while keeping the score lanes clear.

@@ -99,24 +99,11 @@ func make_box(parent: Node3D) -> void:
 	preload("res://scripts/house_prop_art.gd").make_box(parent)
 
 func make_character(player: ATIPlayer) -> void:
-	var body: MeshInstance3D = player.body_mesh
-	player.body_material.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-	player.body_material.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
-	var outline := ShaderMaterial.new()
-	outline.shader = preload("res://scripts/cartoon_outline.gdshader")
-	player.body_material.next_pass = outline
-	# Children of BodyMesh inherit facing, crouch, local hiding and invisibility.
-	for side in [-1,1]:
-		ball(body,Vector3(0.19,0.26,0.10),Vector3(side*0.16,0.26,0.412),CREAM)
-		ball(body,Vector3(0.065,0.13,0.045),Vector3(side*0.16,0.25,0.472),INK)
-		var brow := box(body,Vector3(0.2,0.045,0.055),Vector3(side*0.16,0.44,0.40),INK)
-		brow.rotation.z = side * -0.16
-		var hand := ball(body,Vector3(0.22,0.3,0.23),Vector3(side*0.47,-0.08,0),player.body_color)
-		hand.material_override = player.body_material
-		var shoe := ball(body,Vector3(0.29,0.19,0.39),Vector3(side*0.23,-0.7,0.10),INK)
-		shoe.rotation.y = side*0.15
-	ball(body,Vector3(0.25,0.19,0.07),Vector3(0,-0.05,0.454),INK)
-	box(body,Vector3(0.15,0.055,0.025),Vector3(0,0.004,0.494),CREAM)
+	# Keep BodyMesh as the visibility/facing/stance root, replacing its old capsule.
+	player.body_mesh.mesh = null
+	var character := preload("res://scripts/sockling_art.gd").new()
+	character.actor = player
+	player.body_mesh.add_child(character)
 
 func make_horn(parent: Node3D) -> void:
 	var model := Node3D.new()
