@@ -5,6 +5,15 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.54 Score Ribbons leaderboard
+
+- Implemented approved concept B: separate beveled ceramic pennants with real recessed score channels, rounded player-color fills/badges, a large mint countdown pill and a soft gold crown with a restrained sparkle animation.
+- Smoothly animated, shared relative fill scale with fixed-position numeric scores (tenths preserved). Zero scores show an empty channel; labels never ride up into the crown or timer. Timer rounds up the last partial second and shows `00:00 / FINAL SCORES` when the round ends.
+- Active players recenter into one/two/three/four ribbons without empty holes; each client labels its own slot YOU. Ties hide the leader crown. Disconnects, restarting and returning to the lobby clear the appropriate display state.
+- Visual-only, existing authoritative snapshots and protocol 16. No player, map, physics, power-up or scoring-rule changes. The original tabletop score lanes remain.
+- Rebuilt and checked multiple native Godot captures against the concept. Local two-process host/client tests cover countdown, scores, client badges, lead change, final scores, restart and disconnect; regressions cover post-match flow, multiplayer state, round transitions, kitchen and Sockling art. This does not establish WAN/tunnel reliability or low-end hardware performance.
+- Reproducible Blender builder: `tools/build_score_ribbons.py`. Runtime GLB assets: `art/scoreboards/`. Fredoka font is bundled with its SIL OFL license. Actual game-lighting captures: `docs/art/leaderboard-concepts/v054/`.
+
 ## 0.53 Sockling reference-feel pass
 
 - Broader, overhanging upper muzzle and reshaped grin/cheeks; smaller eyes sit into the head instead of above it. Refined tongue and felt lining remain animated with the mouth.
