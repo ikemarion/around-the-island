@@ -5,6 +5,13 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.56 natural Sockling arms and motion
+
+- Re-sculpted the wide, asymmetric bind-pose arms into relaxed hanging limbs with a tapered wrist, cupped palms and inward-facing thumbs; preserved the fleece, head, cuff and soft feet.
+- Replaced arm bend morphs with a three-joint GPU-skinned chain per arm. Cached weights are shared across all four players, with fixed-length forearms, softly blended elbows and delayed wrist follow-through. Existing jaw and knee morphs remain.
+- Continuous opposite arm swing and damped transitions replace abrupt shoulder reversals. Carrying reaches forward with bent elbows; airborne arms balance more quietly. Reduced sideways slouch, chest bounce, landing squash and stun jitter. Bounded animation substeps keep poses close at 30/60/144 FPS.
+- Cosmetic only: no root motion, collider, camera, speed, power-up or network protocol changes. Visibility/teleport resets clear joint motion. Native Godot captures and the animation preview are in `docs/art/socklings/v056/`.
+
 ## 0.55 cartoon stun gun and clean doorways
 
 - Removed the floating room-name text on both sides of every kitchen/living-room/garage passage. Door frames, headers, thresholds, collisions and navigation remain unchanged.

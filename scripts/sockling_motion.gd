@@ -23,6 +23,9 @@ var was_airborne := false
 var initialized := false
 var foot_vertices: Array[PackedVector3Array] = []
 var foot_deltas: Array[PackedVector3Array] = []
+var shoulder_springs: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
+var elbow_springs: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
+var wrist_springs: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 
 func _init(puppet: Node3D) -> void:
 	model = puppet
@@ -65,10 +68,13 @@ func reset() -> void:
 	model.chest.rotation = Vector3.ZERO
 	model.head.rotation = Vector3.ZERO
 	for i in 2:
+		shoulder_springs[i] = Vector2.ZERO
+		elbow_springs[i] = Vector2.ZERO
+		wrist_springs[i] = Vector2.ZERO
 		model.arms[i].rotation = Vector3.ZERO
 		model.legs[i].rotation = Vector3.ZERO
 		model.legs[i].position.y = -0.41
-		model.arm_meshes[i].set_blend_shape_value(0,0)
+		model.arm_skeletons[i].reset_bone_poses()
 		model.leg_meshes[i].set_blend_shape_value(0,0)
 
 func foot_bottom(index: int, basis: Basis, flex: float) -> float:
@@ -77,7 +83,59 @@ func foot_bottom(index: int, basis: Basis, flex: float) -> float:
 		bottom = minf(bottom,(basis*(foot_vertices[index][i]+foot_deltas[index][i]*flex)).y)
 	return bottom
 
+func spring(value: Vector2, target: float, frequency: float, dt: float) -> Vector2:
+	# Analytic critically damped spring: angle/velocity, stable at low FPS,
+	# soft follow-through without overshoot or frame-rate-specific integration.
+	var offset := value.x - target
+	var step := (value.y + frequency * offset) * dt
+	var decay := exp(-frequency * dt)
+	return Vector2(target + (offset + step) * decay, (value.y - frequency * step) * decay)
+
+func pose_arm(index: int, dt: float, run: float, rise: float, landing_pulse: float) -> void:
+	var side := -1.0 if index == 0 else 1.0
+	# A continuous pendulum rather than copying the foot's stance/swing curve.
+	# The arm travels opposite its leg, with a delayed elbow and trailing wrist.
+	var cycle := stride_phase + index * PI
+	var swing := cos(cycle + 0.12)
+	var pitch := swing * lerpf(0.40, 0.76, run) * gait
+	pitch += sin(clock * 1.7 + index * 0.7) * 0.018 * (1.0 - gait)
+	var spread := side * (0.055 + run * gait * 0.028 + absf(turn) * 0.018)
+	var elbow_angle := 0.18 + run * gait * 0.36 + (0.5 - 0.5 * cos(cycle - 0.4)) * 0.18 * gait
+	pitch = lerpf(pitch, -0.10 - rise * 0.27, air)
+	spread = lerpf(spread, side * (0.18 + (1.0 - rise) * 0.08), air)
+	elbow_angle = lerpf(elbow_angle, 0.40 + rise * 0.22, air)
+	pitch += landing_pulse * 0.14
+	pitch = lerpf(pitch, 0.24, slide)
+	spread = lerpf(spread, side * 0.22, slide)
+	elbow_angle = lerpf(elbow_angle, 0.32, slide)
+	# Bring the hands forward around a held prop instead of lifting a T-pose.
+	pitch = lerpf(pitch, -0.78, carry)
+	spread = lerpf(spread, -side * 0.035, carry)
+	elbow_angle = lerpf(elbow_angle, 0.82, carry)
+	pitch += sin(clock * 12.0 + index) * stun * 0.055
+	shoulder_springs[index] = spring(shoulder_springs[index], pitch, 22.0, dt)
+	elbow_springs[index] = spring(elbow_springs[index], elbow_angle, 18.0, dt)
+	var wrist_target := clampf(-shoulder_springs[index].y * 0.024 + elbow_springs[index].y * 0.014, -0.22, 0.22)
+	wrist_target = lerpf(wrist_target, -0.045, carry)
+	wrist_springs[index] = spring(wrist_springs[index], wrist_target, 15.0, dt)
+	var arm: Node3D = model.arms[index]
+	arm.rotation = Vector3(shoulder_springs[index].x,
+		lerpf(arm.rotation.y, -side * carry * 0.08 - turn * 0.016, 1.0 - exp(-10.0 * dt)),
+		lerpf(arm.rotation.z, spread, 1.0 - exp(-12.0 * dt)))
+	var skeleton: Skeleton3D = model.arm_skeletons[index]
+	skeleton.set_bone_pose_rotation(1, Quaternion(Vector3.RIGHT, -elbow_springs[index].x))
+	skeleton.set_bone_pose_rotation(2, Quaternion.from_euler(Vector3(wrist_springs[index].x, 0, -side * sin(clock * 1.7 + index) * 0.018 * (1.0 - gait) * (1.0 - carry))))
+
 func update(delta: float, measured_speed: float, holding: bool, airborne: bool, stunned: bool, vertical_speed := 0.0, crouched := false, sliding := false, turn_rate := 0.0) -> void:
+	# Sample the moving spring targets at a bounded interval. An analytic spring
+	# alone is stable, but sampling a fast pendulum only once at 30 FPS changes
+	# its phase relative to 144 FPS. Substeps keep the same motion on both clients.
+	var elapsed := clampf(delta, 0.0, 0.10)
+	var steps := maxi(1, ceili(elapsed * 120.0))
+	for step in steps:
+		_step(elapsed / steps, measured_speed, holding, airborne, stunned, vertical_speed, crouched, sliding, turn_rate)
+
+func _step(delta: float, measured_speed: float, holding: bool, airborne: bool, stunned: bool, vertical_speed: float, crouched: bool, sliding: bool, turn_rate: float) -> void:
 	var dt := clampf(delta,0.0,0.10)
 	var blend := 1.0-exp(-14.0*dt)
 	clock = fmod(clock+dt,3600.0)
@@ -119,15 +177,15 @@ func update(delta: float, measured_speed: float, holding: bool, airborne: bool, 
 	var landing_pulse := sin((1.0-landing/0.32)*PI)*impact if landing > 0 else 0.0
 	var takeoff := 1.0-launch/0.18
 	var launch_squash := (sin(takeoff/0.25*PI)*0.10 if takeoff < 0.25 else -sin((takeoff-0.25)/0.75*PI)*0.10) if launch > 0 else 0.0
-	var scale_y := 1.0-landing_pulse*0.16-launch_squash+air*clampf(vertical_speed/80.0,-0.035,0.07)
+	var scale_y := 1.0-landing_pulse*0.13-launch_squash+air*clampf(vertical_speed/80.0,-0.035,0.07)
 	model.scale = Vector3(1.0/sqrt(scale_y),scale_y,1.0/sqrt(scale_y))
 	model.position.y = SOLE_Y*(1.0-scale_y)
 	var breath := sin(clock*2.4)*0.006*(1.0-gait)
-	model.chest.position = Vector3(sin(stride_phase)*0.014*gait,breath+absf(sin(stride_phase))*0.029*gait,0)
+	model.chest.position = Vector3(sin(stride_phase)*0.010*gait,breath+(0.5-0.5*cos(stride_phase*2.0))*0.025*gait,0)
 	var lean := run*0.13*gait+landing_pulse*0.12-slide*0.22+crouch*0.055
-	var wobble := sin(clock*19.0)*0.085*stun
-	# Relaxed, asymmetric sock-puppet stance from the approved reference.
-	model.chest.rotation = model.chest.rotation.lerp(Vector3(lean+0.025,-turn*0.018,-0.20*(1.0-gait*0.55)+sin(stride_phase)*0.055*gait-turn*0.026+wobble),blend)
+	var wobble := sin(clock*12.0)*0.055*stun
+	# A little characterful slouch, with opposing shoulder rotation in motion.
+	model.chest.rotation = model.chest.rotation.lerp(Vector3(lean+0.025,-turn*0.018+sin(stride_phase-0.15)*0.045*gait,-0.065*(1.0-gait*0.55)+sin(stride_phase)*0.030*gait-turn*0.020+wobble),blend)
 	model.head.rotation = model.head.rotation.lerp(Vector3(0.10-lean*0.3+sin(stride_phase*2-0.6)*0.02*gait,-turn*0.022,-sin(stride_phase-0.6)*0.035*gait-wobble*0.5),1.0-exp(-10.0*dt))
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
@@ -149,20 +207,7 @@ func update(delta: float, measured_speed: float, holding: bool, airborne: bool, 
 		leg_mesh.set_blend_shape_value(0,flex)
 		var planted := SOLE_Y-foot_bottom(i,leg.basis,flex)+lift
 		leg.position.y = lerpf(planted,-0.40+rise*0.02,air)
-		var arm_pitch := -stride*lerpf(0.40,0.88,run)*gait+sin(clock*2+i)*0.035
-		var spread := side*(0.025+run*0.08+absf(turn)*0.035)
-		var elbow := 0.10+maxf(stride,0)*0.35*gait
-		arm_pitch = lerpf(arm_pitch,-0.5-rise*0.15,air)
-		spread = lerpf(spread,side*(0.55+sin(clock*7+i)*0.05),air)
-		elbow = lerpf(elbow,0.25+rise*0.3,air)
-		arm_pitch = lerpf(arm_pitch,0.35,slide)
-		spread = lerpf(spread,side*0.45,slide)
-		arm_pitch = lerpf(arm_pitch,-1.05,carry)
-		spread = lerpf(spread,-side*0.08,carry)
-		elbow = lerpf(elbow,0.62,carry)
-		arm_pitch += sin(clock*17+i)*stun*0.10
-		model.arms[i].rotation = model.arms[i].rotation.lerp(Vector3(arm_pitch,-side*carry*0.15,spread),1.0-exp(-11.0*dt))
-		model.arm_meshes[i].set_blend_shape_value(0,lerpf(model.arm_meshes[i].get_blend_shape_value(0),elbow,blend))
+		pose_arm(i, dt, run, rise, landing_pulse)
 	var mouth := clampf(0.12+run*gait*0.2+air*0.28+stun*0.18+sin(clock*3.5)*0.035,0,0.85)
 	mouth = lerpf(model.sculpt_body.get_blend_shape_value(0),mouth,blend)
 	model.sculpt_body.set_blend_shape_value(0,mouth)

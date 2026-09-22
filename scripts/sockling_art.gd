@@ -14,6 +14,7 @@ var jaw: Node3D
 var arms: Array[Node3D] = []
 var legs: Array[Node3D] = []
 var arm_meshes: Array[MeshInstance3D] = []
+var arm_skeletons: Array[Skeleton3D] = []
 var leg_meshes: Array[MeshInstance3D] = []
 var eyes: Array[Node3D] = []
 var blink_offset := 1.0
@@ -121,6 +122,7 @@ func _ready() -> void:
 		var arm := group(chest,"LeftArm" if side == -1 else "RightArm",Vector3(side*0.23,0.12,-0.03))
 		arms.append(arm)
 		arm_meshes.append(sculpt_part(arm,source,"LeftArm" if side == -1 else "RightArm","FabricArmAndHand"))
+		arm_skeletons.append(preload("res://scripts/sockling_arm_rig.gd").attach(arm, arm_meshes[-1], side))
 		var leg := group(self,"LeftLeg" if side == -1 else "RightLeg",Vector3(side*0.21,-0.41,-0.015))
 		legs.append(leg)
 		leg_meshes.append(sculpt_part(leg,source,"LeftLeg" if side == -1 else "RightLeg","SoftLegAndFoot"))

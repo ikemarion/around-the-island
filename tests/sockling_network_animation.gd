@@ -2,6 +2,9 @@ extends SceneTree
 ## Two-process localhost fixture; existing snapshots only, no animation RPCs.
 func _initialize() -> void:
 	call_deferred("run")
+	create_timer(35.0).timeout.connect(func():
+		push_error("SOCKLING_NETWORK timed out")
+		quit(1))
 
 func run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
@@ -20,7 +23,9 @@ func run() -> void:
 		game._start_hosted_game()
 		var p: ATIPlayer = game.players[0]
 		p.set_physics_process(false)
-		for frame in 390:
+		# Repeat across transport startup/throttling; a single short jump can
+		# be missed by unreliable snapshots without indicating an art failure.
+		for frame in 900:
 			var t := fmod(frame/60.0,3.0)
 			p.position = Vector3(-1+t*0.6,-0.05,3.5)
 			p.velocity = Vector3(0.6,0,0)
@@ -40,12 +45,22 @@ func run() -> void:
 		assert(game.round_running,"Animation test lobby did not start")
 		var observed := {}
 		var art = game.players[0].body_mesh.get_node("Sockling")
-		for frame in 320:
+		var elbow_min := INF
+		var elbow_max := -INF
+		var wrist_travel := 0.0
+		for frame in 810:
 			await physics_frame
 			observed[art.motion.state] = true
+			var elbow: float = art.arm_skeletons[0].get_bone_pose_rotation(1).get_euler().x
+			elbow_min = minf(elbow_min, elbow)
+			elbow_max = maxf(elbow_max, elbow)
+			wrist_travel = maxf(wrist_travel, absf(art.arm_skeletons[0].get_bone_pose_rotation(2).get_euler().x))
 		for expected in [&"walk",&"rise",&"fall",&"land",&"crouch"]:
 			assert(observed.has(expected),"Remote animation state missing: "+str(expected)+" observed "+str(observed))
-		print("SOCKLING_NETWORK client: remote walk/rise/apex/fall/land/crouch observed with existing protocol")
+		assert(elbow_max - elbow_min > 0.12, "Remote elbow must articulate, not remain in bind pose")
+		assert(wrist_travel > 0.005, "Remote wrist must follow the moving arm")
+		assert(art.arm_meshes[0].skin != null and art.arm_meshes[0].get_node(art.arm_meshes[0].skeleton) == art.arm_skeletons[0])
+		print("SOCKLING_NETWORK client: remote walk/rise/apex/fall/land/crouch and skinned elbow/wrist motion observed with existing protocol")
 	game._prepare_session()
 	game.queue_free()
 	await process_frame

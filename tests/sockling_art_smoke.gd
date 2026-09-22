@@ -34,12 +34,14 @@ func run() -> void:
 		assert(art.sculpt_body.mesh.get_blend_shape_name(0) == "JawOpen")
 		assert(art.sculpt_body.mesh.get_aabb().size.x > 0.63,"Keep the broad reference muzzle")
 		assert(art.eyes[0].get_node("IvoryEye").scale.x < 0.15,"Eyes should be small and embedded, not stalk-like")
-		assert(art.arm_meshes[0].mesh.get_aabb().size.x > 0.60,"Keep the reference's long floppy arms")
+		assert(art.arm_meshes[0].mesh.get_aabb().size.y > 0.70,"Keep long soft arms in their relaxed hanging bind pose")
+		assert(art.arm_meshes[0].mesh.get_aabb().size.x < 0.42,"Arms should not be sculpted into a permanent wide reach")
 		assert(art.sculpt_body.has_node("CloseUpFleece"))
 		assert(art.sculpt_body.get_node("CloseUpFleece").visibility_range_end == 7.0)
 		assert(art.skin_materials.size() == 3)
 		for limb in art.arm_meshes:
-			assert(limb.mesh.get_blend_shape_name(0) == "ElbowFlex")
+			assert(limb.skin != null and limb.skin.get_bind_count() == 3)
+			assert(limb.mesh.get_blend_shape_count() == 0,"Arms now use fixed-length skeletal bends")
 		for limb in art.leg_meshes:
 			assert(limb.mesh.get_blend_shape_name(0) == "KneeFlex")
 		assert(art.has_node("Puppet/Head/LowerJaw/Tongue"))
@@ -78,7 +80,8 @@ func run() -> void:
 		for skin in art.skin_materials:
 			assert(skin.get_shader_parameter("stunned") == 1.0)
 		for frame in 45: art.animate(1.0/60.0,7.0,true,false,false)
-		assert(art.arms[0].rotation.x < -0.9)
+		assert(art.arms[0].rotation.x < -0.7)
+		assert(art.arm_skeletons[0].get_bone_pose_rotation(1).get_euler().x < -0.75)
 		assert(art.fleece.get_shader_parameter("stunned") == 0.0)
 		art.animate(0.2,4.0,false,false,false)
 		assert(art.sculpt_body.get_blend_shape_value(0) > 0.0)
@@ -118,12 +121,12 @@ func run() -> void:
 		await capture("sockling-side")
 		var puppet = gold.body_mesh.get_node("Sockling")
 		puppet.phase = 0.1
-		puppet.animate(0.1,0,true,false,false)
+		for frame in 60: puppet.animate(1.0/60.0,0,true,false,false)
 		await capture("sockling-holding")
 		main.camera.position = Vector3(2.4,1.6,6.6)
 		main.camera.look_at(Vector3(0,0.9,3.3))
 		puppet.phase = 0.5
-		puppet.animate(0.10,6.2,false,false,false)
+		for frame in 90: puppet.animate(1.0/60.0,6.2,false,false,false)
 		await capture("sockling-run")
 		for index in 4:
 			var player: ATIPlayer = main.players[index]

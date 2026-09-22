@@ -55,7 +55,7 @@ func run() -> void:
 			var floor_y: float = art.legs[leg].position.y+art.motion.foot_bottom(leg,art.legs[leg].basis,art.leg_meshes[leg].get_blend_shape_value(0))
 			assert(floor_y >= -0.821,"Stride drove foot under the visual sole plane")
 	pose(0.7,5.0,true)
-	assert(art.arms[0].rotation.x < -1.0 and art.arm_meshes[0].get_blend_shape_value(0) > 0.5)
+	assert(art.arms[0].rotation.x < -0.7 and art.arm_skeletons[0].get_bone_pose_rotation(1).get_euler().x < -0.75)
 	pose(0.7,3.0,false,false,false,0,true)
 	assert(art.motion.state == &"crouch")
 	pose(0.5,7.0,false,false,false,0,true,true)
@@ -129,7 +129,7 @@ func preview(player: ATIPlayer) -> void:
 		p.visible = p == player
 		p.name_label.hide()
 		p.token_marker.hide()
-	game.camera.fov = 45
+	game.camera.fov = 36
 	game.camera.position = Vector3(3.4,2.5,7.5)
 	game.camera.look_at(Vector3(0,1.55,3.3))
 	DirAccess.make_dir_recursive_absolute("res://build/network-test/sockling-animation-frames")

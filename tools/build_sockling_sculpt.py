@@ -37,7 +37,7 @@ def ellipsoid(name, center, radius):
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     return obj
 
-def tube(name, points, radius):
+def tube(name, points, radius, radii=None):
     curve = bpy.data.curves.new(name, "CURVE")
     curve.dimensions = "3D"
     curve.resolution_u = 20
@@ -46,8 +46,10 @@ def tube(name, points, radius):
     curve.use_fill_caps = True
     spline = curve.splines.new("BEZIER")
     spline.bezier_points.add(len(points)-1)
-    for bp, point in zip(spline.bezier_points, points):
+    for index, (bp, point) in enumerate(zip(spline.bezier_points, points)):
         bp.co = coord(point)
+        if radii is not None:
+            bp.radius = radii[index]
         bp.handle_left_type = "AUTO"
         bp.handle_right_type = "AUTO"
     obj = bpy.data.objects.new(name, curve)
@@ -149,26 +151,34 @@ for v in jaw_key.data:
     v.co.y = -(-.10+dy*sin(angle)+dz*cos(angle))
 
 for side, name in [(-1,"LeftArm"),(1,"RightArm")]:
-    wrist = Vector((side*.62,-.36 if side == -1 else -.27,.075 if side == -1 else .14))
+    # A relaxed hanging arm is a useful bind pose, unlike the old poster-like
+    # permanent reach. Runtime shoulder/elbow/wrist bones supply the action.
+    wrist = Vector((side*.16,-.575,.055))
     def hand_point(offset):
-        angle = 1.13 if side == 1 else -.10
-        x,y,z = (value*1.10 for value in offset)
-        return wrist+Vector((x*cos(angle)-y*sin(angle),x*sin(angle)+y*cos(angle),z))
-    parts = [tube("Soft elbow", [(0,0,0),(side*.28,-.040,0),(side*.49,-.20,.025),tuple(wrist)], .072)]
-    parts.append(ellipsoid("Mitten palm", tuple(wrist), (.124,.117,.078)))
-    # Reference mittens have three broad lobes TOTAL (two fingers + thumb).
-    # Broad webbing and rounded tips avoid the previous thin four-finger hand.
+        x,y,z = offset
+        x *= side
+        angle = side*.48
+        return wrist+Vector((x*cos(angle)+z*sin(angle),y,-x*sin(angle)+z*cos(angle)))
+    parts = [tube("Tapered soft arm", [(0,0,0),(side*.080,-.15,-.022),
+        (side*.135,-.30,-.025),(side*.155,-.445,.012),tuple(wrist)],
+        .070,[1.10,1.02,.92,.84,.80])]
+    parts.append(ellipsoid("Shoulder cap",(0,-.014,0),(.081,.090,.080)))
+    parts.append(ellipsoid("Mitten palm",tuple(wrist),(.094,.104,.065)))
+    # Three broad rounded lobes, slightly cupped, with an inward-facing thumb.
+    # Both hands have the same relaxed orientation instead of a fixed wave.
     for finger in range(2):
-        x = (finger-.5)*.091
+        x = (finger-.5)*.080
         start = hand_point((x,-.025,0))
-        end = hand_point((x*1.35,-.162+finger*.033,.018))
-        parts.append(tube("Mitten finger", [tuple(start),tuple((start+end)/2),tuple(end)], .051))
-        parts.append(ellipsoid("Mitten tip", tuple(end), (.051,.054,.049)))
-    thumb = hand_point((.143,.010,.021))
-    parts.append(tube("Thumb", [tuple(hand_point((.055,.020,0))),tuple(thumb)], .052))
-    parts.append(ellipsoid("Thumb tip",tuple(thumb),(.055,.052,.050)))
+        end = hand_point((x*1.16,-.141+finger*.020,.025))
+        middle = hand_point((x*1.09,-.095,.006))
+        parts.append(tube("Mitten finger",[tuple(start),tuple(middle),tuple(end)],.045))
+        parts.append(ellipsoid("Mitten tip",tuple(end),(.047,.050,.045)))
+    thumb = hand_point((-.111,-.020,.036))
+    parts.append(tube("Thumb",[tuple(hand_point((-.050,.010,.008))),tuple(thumb)],.046))
+    parts.append(ellipsoid("Thumb tip",tuple(thumb),(.049,.049,.046)))
     arm = finish(fuse(name,parts,.0065),.32)
-    soft_joint(arm, "ElbowFlex", (side*.23,-.14,.012), -.90, .075, .225)
+    # No arm shape-key interpolation: the runtime rig bends a fixed-length
+    # chain and skins the continuous surface with soft joint weights.
 
 for side, name in [(-1,"LeftLeg"),(1,"RightLeg")]:
     leg = fuse(name,[
