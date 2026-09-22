@@ -41,6 +41,9 @@ static func attach(parent: MeshInstance3D, title: String, mat: Material) -> void
 				var c := indices[offset+2]
 				var mid := (v[a]+v[b]+v[c])/3.0
 				if title == "Body" and mid.y < 0.38 and mid.y > 0.025 and mid.z > -0.04: continue
+				# Keep geometry fibres on the shoulder above the elbow morph.
+				# The bending forearm/mitten retains its procedural fibre shading.
+				if title.ends_with("Arm") and mid.y < -0.06: continue
 				var area := (v[b]-v[a]).cross(v[c]-v[a]).length()*0.5
 				if area < 0.0000001: continue
 				total += area

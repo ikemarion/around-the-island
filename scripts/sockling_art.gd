@@ -13,6 +13,17 @@ var head: Node3D
 var jaw: Node3D
 var arms: Array[Node3D] = []
 var legs: Array[Node3D] = []
+var arm_meshes: Array[MeshInstance3D] = []
+var leg_meshes: Array[MeshInstance3D] = []
+var eyes: Array[Node3D] = []
+var blink_offset := 1.0
+var motion: RefCounted
+var sampled_speed := 0.0
+var sampled_airborne := false
+var sampled_turn := 0.0
+var last_facing := 0.0
+var last_epoch := -1
+var tracking := false
 var phase := 0.0
 var gait := 0.0
 var last_position := Vector3.ZERO
@@ -102,40 +113,63 @@ func _ready() -> void:
 	soft(jaw,Vector3(0.205,0.030,0.16),Vector3(0,0,0.10),"Tongue",ART.material(Color("a85241"),0.99))
 	for side in [-1,1]:
 		var eye := group(head,"EyeLeft" if side == -1 else "EyeRight",Vector3(side*0.118,0.700,0.115))
+		eyes.append(eye)
 		soft(eye,Vector3(0.164,0.184,0.164),Vector3.ZERO,"IvoryEye",ART.material(CREAM,0.48))
 		soft(eye,Vector3(0.052,0.074,0.027),Vector3(0.022,0.000,0.079),"Pupil",ART.material(Color("28251d"),0.32))
 		soft(eye,Vector3.ONE*0.013,Vector3(0.014,0.022,0.093),"EyeGlint",ART.material(Color.WHITE,0.3))
 		var arm := group(chest,"LeftArm" if side == -1 else "RightArm",Vector3(side*0.23,0.12,-0.03))
 		arms.append(arm)
-		sculpt_part(arm,source,"LeftArm" if side == -1 else "RightArm","FabricArmAndHand")
+		arm_meshes.append(sculpt_part(arm,source,"LeftArm" if side == -1 else "RightArm","FabricArmAndHand"))
 		var leg := group(self,"LeftLeg" if side == -1 else "RightLeg",Vector3(side*0.14,-0.41,-0.015))
 		legs.append(leg)
-		sculpt_part(leg,source,"LeftLeg" if side == -1 else "RightLeg","SoftLegAndFoot")
+		leg_meshes.append(sculpt_part(leg,source,"LeftLeg" if side == -1 else "RightLeg","SoftLegAndFoot"))
 	source.free()
+	motion = preload("res://scripts/sockling_motion.gd").new(self)
+	blink_offset = 1.0+float(actor.player_index)*0.71 if is_instance_valid(actor) else 1.0
 	if is_instance_valid(actor): last_position = actor.global_position
 
-func animate(delta: float, speed: float, holding: bool, airborne: bool, stunned: bool) -> void:
-	gait = move_toward(gait,clampf(speed/5.5,0,1),delta*7)
-	phase += delta*(3.5+speed*1.4)
-	chest.position.y = absf(sin(phase))*0.025*gait
-	chest.rotation.z = -0.07+sin(phase)*0.055*gait
-	head.rotation.z = sin(phase-0.4)*0.05*gait
-	var opening := 0.15+0.22*(sin(phase*0.5)*0.5+0.5)
-	sculpt_body.set_blend_shape_value(0,opening)
-	jaw.rotation.x = opening*0.24
-	for index in 2:
-		var swing := sin(phase+index*PI)*gait
-		legs[index].rotation.x = swing*0.55 if not airborne else -0.25
-		arms[index].rotation.x = -0.95 if holding else (-swing*0.62 if not airborne else -0.7)
-		arms[index].rotation.z = (-0.12 if index == 0 else 0.22)*(1+gait)
-	for skin in skin_materials:
-		skin.set_shader_parameter("stunned",1.0 if stunned else 0.0)
+func animate(delta: float, speed: float, holding: bool, airborne: bool, stunned: bool, vertical_speed := 0.0, crouched := false, sliding := false, turn_rate := 0.0) -> void:
+	motion.stride_phase = phase
+	motion.update(delta,speed,holding,airborne,stunned,vertical_speed,crouched,sliding,turn_rate)
+	phase = motion.stride_phase
+	gait = motion.gait
+
+func supported() -> bool:
+	if not actor.simulation_enabled: return true
+	if not actor.network_replica or actor.client_predicted: return actor.is_on_floor()
+	# Replicas don't run move_and_slide, so is_on_floor is stale/false.
+	# A short support query keeps the airborne pose through the jump apex.
+	if actor.velocity.y > 1.0: return false
+	var query := PhysicsRayQueryParameters3D.create(actor.global_position+Vector3.UP*0.15,actor.global_position-Vector3.UP*0.22,3,[actor.get_rid()])
+	return not actor.get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+
+func _physics_process(delta: float) -> void:
+	if not animation_enabled or not is_instance_valid(actor): return
+	var displacement := actor.global_position-last_position
+	last_position = actor.global_position
+	var shown := is_visible_in_tree() and actor.visible
+	var reset_needed := not tracking or last_epoch != actor.motion_epoch or displacement.length() > 3.0
+	last_epoch = actor.motion_epoch
+	if not shown:
+		tracking = false
+		return
+	if reset_needed:
+		motion.reset()
+		phase = 0.0
+		sampled_speed = 0.0
+		sampled_turn = 0.0
+	else:
+		sampled_speed = minf(Vector2(displacement.x,displacement.z).length()/maxf(delta,0.001),22.0)
+		sampled_turn = wrapf(actor.body_mesh.rotation.y-last_facing,-PI,PI)/maxf(delta,0.001)
+	last_facing = actor.body_mesh.rotation.y
+	sampled_airborne = not supported()
+	tracking = true
 
 func _process(delta: float) -> void:
 	if not animation_enabled or not is_instance_valid(actor): return
-	var distance := actor.global_position.distance_to(last_position)
-	last_position = actor.global_position
-	if not is_visible_in_tree(): return
-	var speed := minf(distance/maxf(delta,0.001),12.0) if distance < 1.0 else 0.0
+	if not is_visible_in_tree() or not tracking: return
 	var holding := is_instance_valid(actor.held_chair) or not actor.remote_held_name.is_empty()
-	animate(delta,speed,holding,absf(actor.velocity.y)>1.5,actor.stun_time_remaining>0)
+	var sliding := actor.slide_time_remaining > 0.0
+	if actor.network_replica and not actor.client_predicted:
+		sliding = actor.crouched and sampled_speed > actor.crouch_speed*actor._chase_speed_multiplier()+0.6 and not sampled_airborne
+	animate(delta,sampled_speed,holding,sampled_airborne,actor.stun_time_remaining>0,actor.velocity.y,actor.crouched,sliding,sampled_turn)

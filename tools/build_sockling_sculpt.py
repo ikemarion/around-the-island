@@ -123,6 +123,18 @@ def smoothstep(a, b, x):
     t = max(0, min(1, (x-a)/(b-a)))
     return t*t*(3-2*t)
 
+def soft_joint(obj, name, hinge, angle, start, end):
+    """A cloth elbow/knee fold, with a smooth bend instead of a hard seam."""
+    obj.shape_key_add(name="Basis")
+    key = obj.shape_key_add(name=name)
+    for v in key.data:
+        x, z, y = v.co.x, -v.co.y, v.co.z
+        weight = smoothstep(start, end, -y)
+        a = angle*weight
+        dy, dz = y-hinge[1], z-hinge[2]
+        v.co.z = hinge[1]+dy*cos(a)-dz*sin(a)
+        v.co.y = -(hinge[2]+dy*sin(a)+dz*cos(a))
+
 body.shape_key_add(name="Basis")
 jaw_key = body.shape_key_add(name="JawOpen")
 for v in jaw_key.data:
@@ -151,7 +163,8 @@ for side, name in [(-1,"LeftArm"),(1,"RightArm")]:
     thumb = hand_point((.131,-.010,.027))
     parts.append(tube("Thumb", [tuple(hand_point((.055,.017,0))),tuple(thumb)], .041))
     parts.append(ellipsoid("Thumb tip",tuple(thumb),(.042,.041,.041)))
-    finish(fuse(name,parts,.0065),.36)
+    arm = finish(fuse(name,parts,.0065),.36)
+    soft_joint(arm, "ElbowFlex", (side*.23,-.14,.012), -.90, .075, .225)
 
 for side, name in [(-1,"LeftLeg"),(1,"RightLeg")]:
     leg = fuse(name,[
@@ -163,6 +176,7 @@ for side, name in [(-1,"LeftLeg"),(1,"RightLeg")]:
         if poly.center.z < -.230:
             poly.material_index = 1
     finish(leg,.43)
+    soft_joint(leg, "KneeFlex", (side*.055,-.13,-.045), .90, .08, .20)
 
 foot = ellipsoid("Foot", (0,0,0), (.137,.10,.205))
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)

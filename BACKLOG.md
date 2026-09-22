@@ -5,6 +5,14 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.52 Sockling puppet animation
+
+- Added soft elbow and knee morphs to the existing sculpt, with locally blended walk/run strides, foot clearance, opposite arm swing, body bounce, turn lean, secondary head motion and staggered blinks.
+- Takeoff compression/stretch, rising/falling poses and impact-scaled landing squash do not delay input or alter the player/camera/collider. Carrying, crouching, sliding and stunned wobble blend over locomotion.
+- Sample horizontal travel at physics cadence rather than render-frame displacement. Remote support queries keep airborne poses through the jump apex; visibility changes and motion epochs clear stale landing/stride state. No new network fields or RPCs (protocol 16).
+- Tests cover sole clearance, joints, stance transitions, frame-rate tolerance, apex/landing, invisibility/teleport reset and unchanged physics. Two-process local hosting verifies remote walk/rise/fall/land/crouch with existing snapshots. WAN reliability and low-end performance are not established by these tests.
+- Native Godot animated preview and stills: `docs/art/socklings/v052/` (staged art inspection, not a live match recording).
+
 ## 0.51 Sockling sculpt refinement
 
 - Rebuilt the head, neck and torso as a continuous Blender sculpt with a real recessed mouth and a jaw morph that deforms the lining and lips together. Replaced bead fingers with connected soft hands and refined the asymmetric arms, bent legs, padded feet and smaller eyes against the approved roster.

@@ -35,6 +35,10 @@ func run() -> void:
 		assert(art.sculpt_body.has_node("CloseUpFleece"))
 		assert(art.sculpt_body.get_node("CloseUpFleece").visibility_range_end == 7.0)
 		assert(art.skin_materials.size() == 3)
+		for limb in art.arm_meshes:
+			assert(limb.mesh.get_blend_shape_name(0) == "ElbowFlex")
+		for limb in art.leg_meshes:
+			assert(limb.mesh.get_blend_shape_name(0) == "KneeFlex")
 		assert(art.has_node("Puppet/Head/LowerJaw/Tongue"))
 		assert(art.has_node("Puppet/KnittedWaistband/RibbedCuff"))
 		assert(not materials.has(art.fleece))
@@ -70,7 +74,7 @@ func run() -> void:
 		assert(art.fleece.get_shader_parameter("stunned") == 1.0)
 		for skin in art.skin_materials:
 			assert(skin.get_shader_parameter("stunned") == 1.0)
-		art.animate(0.15,7.0,true,false,false)
+		for frame in 45: art.animate(1.0/60.0,7.0,true,false,false)
 		assert(art.arms[0].rotation.x < -0.9)
 		assert(art.fleece.get_shader_parameter("stunned") == 0.0)
 		art.animate(0.2,4.0,false,false,false)
