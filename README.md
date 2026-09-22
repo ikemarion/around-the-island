@@ -4,9 +4,13 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-The current local package is [ATI v0.59 for Windows](releases/ATI-v0.59-Windows.zip). Extract it and run the included ATI executable. GitHub upload remains paused; the [v0.59 GitHub download](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.59-Windows.zip) will become available after this update is published. **Use v0.59 on everyone's PC for matching visuals; protocol 17 is unchanged.** Loopers now have a matte sculpted-clay surface with subtle hand-worked relief instead of fuzzy velvet, a broader rounded head, softer sleepy eye openings and fuller mitten hands. [Actual Godot comparison, close-up and animation](docs/art/loopers/v059/README.md).
+The current local package is [ATI v0.60 for Windows](releases/ATI-v0.60-Windows.zip). Extract it and run the included ATI executable. GitHub upload remains paused; the [v0.60 GitHub download](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.60-Windows.zip) will become available after this update is published. **Use v0.60 on everyone's PC for the same menu and art; protocol 17 is unchanged.**
 
-Choose **Looper** or **Sockling** from **Your character** in the lobby before the match starts. Both characters play identically. Choices are saved locally and replicated to other players; Decoy Double copies either character and its color. Sockling's fleece appearance is unchanged.
+Choose **Sockling** or **Looper** using the visible **Choose your skin** buttons in the main menu or waiting lobby. Your choice is saved locally and used for practice, hosting and joining. Both characters play identically; Decoy Double copies either character and its color. Selection locks while connecting or playing.
+
+The practice bot randomly chooses from the available characters at the start of each round, including restarts. Repeats are possible; it keeps that appearance for the round. Bot rolls never change your saved choice or other human players' skins, and use separate randomness from spark assignment and power-up spawns. [Menu screenshots and verification notes](docs/ui/skin-selection-v060/README.md).
+
+Loopers retain v0.59's matte sculpted-clay surface, rounded head, sleepy eyes and fuller mittens. Sockling's fleece is unchanged. [Actual Godot clay comparison, close-up and animation](docs/art/loopers/v059/README.md).
 
 Decoy Double still gives its user four seconds of invisibility with visible footsteps; the copy remains visible and animates independently. The pickup icon and ability rules are unchanged.
 

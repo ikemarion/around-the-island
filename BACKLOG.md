@@ -5,6 +5,12 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50), then Loopers and a two-character lobby selector (v0.58). Doughballs, Pebble Pals, Patch Pals and Nubbins remain future passes. Reference and actual Godot captures: `docs/art/socklings/` and `docs/art/loopers/`.
 
+## 0.60 Skin buttons and randomized practice bot
+
+- Made both skin choices directly visible in the main menu and waiting lobby, with a selected-state highlight and standard button navigation. Local preference, online admission and match/connection locking still use the existing validated selection flow.
+- Practice bots roll from the character catalog on each round start/restart, retaining their skin during the round. Repeats are allowed. Inactive slots, the local player and online humans are never randomized. A separate cosmetic random generator leaves spark/power-up randomness untouched.
+- Skin-specific art fixtures now explicitly choose their subject so bot randomness cannot make those tests flaky. Deterministic bot tests cover the pool, round lifecycle, unchanged player preference and decoy copies. Protocol 17 and gameplay rules are unchanged.
+
 ## 0.59 Looper clay refinement
 
 - Replaced the fuzzy velvet surface and close-up fibre geometry with matte modeling clay: subtle hand-worked relief, restrained color variation and broad, low-sheen highlights. Purple and cream share the clay treatment; Sockling's fleece is unchanged.

@@ -10,9 +10,10 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 17
-const BUILD_VERSION := "0.59"
+const BUILD_VERSION := "0.60"
 const CHARACTER_CATALOG := preload("res://scripts/character_catalog.gd")
 var preferred_character: StringName = &"sockling"
+var bot_skin_rng := RandomNumberGenerator.new()
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -104,6 +105,8 @@ var start_requested_ms := 0
 
 
 func _ready() -> void:
+	# Cosmetic rolls must not alter spark assignment or power-up randomness.
+	bot_skin_rng.randomize()
 	_load_character_preference()
 	network_diagnostics = preload("res://scripts/network_diagnostics.gd").new()
 	network_diagnostics.name = "NetworkDiagnostics"
@@ -647,6 +650,7 @@ func reset_round() -> void:
 	for slot in MAX_PLAYERS:
 		players[slot].global_position = PLAYER_SPAWNS[slot]
 		players[slot].reset_movement_state()
+	_randomize_bot_characters()
 	for obstacle in obstacle_spawn_transforms:
 		obstacle.freeze = false
 		obstacle.holder = null
@@ -666,6 +670,16 @@ func reset_round() -> void:
 	_update_world_scoreboard()
 	if session_mode == &"host":
 		_broadcast_snapshot(true)
+
+
+func _randomize_bot_characters() -> void:
+	# Practice only: never replace a human's choice or re-roll from snapshots.
+	if session_mode != &"solo": return
+	for slot in MAX_PLAYERS:
+		if slot == local_slot or not active_slots[slot] or not players[slot].ai_controlled:
+			continue
+		var index := bot_skin_rng.randi_range(0, CHARACTER_CATALOG.IDS.size() - 1)
+		players[slot].set_character_skin(CHARACTER_CATALOG.IDS[index])
 
 
 func _transfer_token(new_holder: int) -> void:

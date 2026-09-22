@@ -33,6 +33,7 @@ func run() -> void:
 	for slot in 4:
 		var source: ATIPlayer = game.players[slot]
 		source.set_physics_process(false)
+		source.set_character_skin(&"sockling") # Keep this four-color Sockling clone fixture deterministic.
 		source.set_slot_active(true)
 		source.global_position = Vector3(-5 + slot * 2.5, -0.05, 3.5)
 		source.network_controlled = true

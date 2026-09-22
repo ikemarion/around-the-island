@@ -19,6 +19,7 @@ func run() -> void:
 	for index in 4:
 		var player: ATIPlayer = main.players[index]
 		player.set_physics_process(false)
+		player.set_character_skin(&"sockling") # Fixed-skin art fixture, independent of the randomized practice bot.
 		player.set_slot_active(true)
 		player.set_local_visual_hidden(false)
 		player.global_position = Vector3((index-1.5)*1.55,-0.05,3.3)

@@ -1,6 +1,6 @@
-# ATI online play — v0.59 (protocol 17)
+# ATI online play — v0.60 (protocol 17)
 
-Use **v0.59** on everyone's PC for the refined clay Loopers; protocol 17 is unchanged from v0.58. Choose **Sockling** or **Looper** under **Your character** before starting the match. Both play identically; the choice is saved on your PC and shared with the other players. Decoy Double copies your selected character and its color. Character selection locks once the match begins. This update does not change movement, hitboxes, scoring or power-up rules.
+Use **v0.60** on everyone's PC for the visible skin buttons and randomized practice bot; protocol 17 is unchanged from v0.58. Choose **Sockling** or **Looper** under **Choose your skin** in the main menu or waiting lobby. Both play identically; the choice is saved on your PC and shared with the other players. Decoy Double copies your selected character and its color. Selection locks while connecting or playing. Only the practice bot gets a new random character each round; human choices are preserved. This update does not change movement, hitboxes, scoring or power-up rules.
 
 The five-second 2× Speed sneaker pickup (Q / right bumper) remains synchronized by the host. It does not stack with the charged chaser boost. The buddy hides its user for four seconds while the decoy remains visible. Other players see fading footprints when the user moves on the ground. This is independent of regular invisibility. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings.
 
@@ -47,7 +47,7 @@ Normal ATI launches hold a loopback TCP window lock on port 27887. A second wind
 - A 15-second timeout means the room could be offline, full or unreachable; the message does not pretend to distinguish these cases.
 - Start requests show Starting and allow retry after five seconds without a response.
 - Maximum four players, including the host. A fifth player is not admitted.
-- Use v0.59 for matching art. Protocol 17 is required; older protocol versions are rejected when joining.
+- Use v0.60 for matching menus and art. Protocol 17 is required; older protocol versions are rejected when joining.
 
 ## Current online-play caveat
 

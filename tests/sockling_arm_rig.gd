@@ -16,10 +16,18 @@ func run() -> void:
 	main.set_physics_process(false)
 	for player in main.players:
 		player.set_physics_process(false)
+		player.set_character_skin(&"sockling") # A randomized practice bot must not change the rig under test.
 		player.body_mesh.get_node("Sockling").animation_enabled = false
 	var art = main.players[1].body_mesh.get_node("Sockling")
 	art.motion.reset()
-	assert(RIG.weighted_meshes.size() == 2, "Build each weighted arm only once, shared by all players")
+	var sockling_meshes := {}
+	for player in main.players:
+		var other = player.body_mesh.get_node("Sockling")
+		for index in 2:
+			var weighted: ArrayMesh = other.arm_meshes[index].mesh
+			sockling_meshes[weighted.get_rid()] = true
+			assert(weighted == art.arm_meshes[index].mesh and RIG.weighted_meshes.values().has(weighted), "Players must reuse the cached weighted Sockling arm")
+	assert(sockling_meshes.size() == 2, "Build exactly two weighted Sockling arms, shared by all players")
 	for index in 2:
 		var skeleton: Skeleton3D = art.arm_skeletons[index]
 		var mesh: MeshInstance3D = art.arm_meshes[index]

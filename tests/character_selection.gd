@@ -30,7 +30,7 @@ func run() -> void:
 		assert(actor.character_model().get_instance_id() == model_id, "Repeated snapshots rebuilt the skin")
 		game.kitchen_menu.refresh()
 		assert(game.kitchen_menu.seats[0].character.text == CATALOG.display_name(id))
-		assert(game.kitchen_menu.character_choice.selected == CATALOG.IDS.find(id))
+		assert(game.kitchen_menu.skin_buttons[CATALOG.IDS.find(id)].button_pressed)
 		assert(game._player_state(0).character == id)
 		# Every decoy stores character identity and a private copy of its material.
 		var effect = load("res://scripts/chaos_effect.gd").new()
@@ -49,7 +49,7 @@ func run() -> void:
 		effect.queue_free()
 		replica.queue_free()
 	game._start_solo()
-	assert(actor.character_id == &"looper" and game.players[1].character_id == &"sockling")
+	assert(actor.character_id == &"looper" and game.players[1].ai_controlled and CATALOG.valid(game.players[1].character_id))
 	game.choose_character(&"sockling")
 	assert(actor.character_id == &"looper", "Selection changed during the match")
 	game.reset_round()

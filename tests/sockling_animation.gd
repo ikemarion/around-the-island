@@ -29,6 +29,7 @@ func run() -> void:
 	game.camera.set_physics_process(false)
 	for p in game.players:
 		p.set_physics_process(false)
+		p.set_character_skin(&"sockling") # This fixture specifically verifies Sockling animation.
 		p.body_mesh.get_node("Sockling").animation_enabled = false
 	var player: ATIPlayer = game.players[3]
 	player.set_slot_active(true)

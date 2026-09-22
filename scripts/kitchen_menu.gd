@@ -17,11 +17,18 @@ var body: BoxContainer
 var aside: VBoxContainer
 var theme_resource: Theme
 var direct_test: CheckButton
-var character_choice: OptionButton
+var skin_buttons: Array[Button] = []
 
 func build(main: Node, existing: Dictionary) -> void:
 	game = main
 	controls = existing
+	# This project's built-in accept action has keyboard bindings only. Add A
+	# without replacing them, so standard focused buttons also work on a pad.
+	var controller_accept := InputEventJoypadButton.new()
+	controller_accept.device = -1
+	controller_accept.button_index = JOY_BUTTON_A
+	if not InputMap.action_has_event("ui_accept", controller_accept):
+		InputMap.action_add_event("ui_accept", controller_accept)
 	theme_resource = _make_theme()
 	theme = theme_resource
 	game.get_node("Lobby/Panel").theme = theme_resource
@@ -104,15 +111,28 @@ func build(main: Node, existing: Dictionary) -> void:
 	room_heading = _label(aside, "", 27)
 	room_hint = _label(aside, "", 14)
 	room_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_label(aside, "Your character", 15)
-	character_choice = OptionButton.new()
-	character_choice.name = "CharacterChoice"
-	character_choice.custom_minimum_size.y = 44
-	character_choice.add_item("Sockling · knitted mischief")
-	character_choice.add_item("Looper · clay daydreamer")
-	aside.add_child(character_choice)
-	character_choice.item_selected.connect(func(index: int):
-		game.choose_character(game.CHARACTER_CATALOG.IDS[index]))
+	_label(aside, "Choose your skin", 18)
+	var skin_row := HBoxContainer.new()
+	skin_row.add_theme_constant_override("separation", 8)
+	aside.add_child(skin_row)
+	var skin_group := ButtonGroup.new()
+	for id in game.CHARACTER_CATALOG.IDS:
+		var skin_button := Button.new()
+		skin_button.name = game.CHARACTER_CATALOG.display_name(id) + "Choice"
+		skin_button.toggle_mode = true
+		skin_button.button_group = skin_group
+		skin_button.focus_mode = Control.FOCUS_ALL
+		skin_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		skin_button.custom_minimum_size = Vector2(112, 60)
+		skin_button.tooltip_text = "Choose this skin. Both characters play identically."
+		_style_skin_button(skin_button)
+		skin_row.add_child(skin_button)
+		skin_buttons.append(skin_button)
+		skin_button.pressed.connect(func():
+			game.choose_character(id)
+			refresh())
+	skin_buttons[0].focus_neighbor_right = skin_buttons[0].get_path_to(skin_buttons[1])
+	skin_buttons[1].focus_neighbor_left = skin_buttons[1].get_path_to(skin_buttons[0])
 	home_actions = VBoxContainer.new()
 	home_actions.add_theme_constant_override("separation", 10)
 	aside.add_child(home_actions)
@@ -158,9 +178,12 @@ func refresh() -> void:
 	var busy: bool = game.connection_started_ms != 0
 	var hosting: bool = game.session_mode == &"hosting"
 	var count: int = game.active_slots.count(true)
-	character_choice.disabled = not game.can_choose_character()
-	character_choice.select(game.CHARACTER_CATALOG.IDS.find(game.preferred_character))
-	character_choice.tooltip_text = "Choose before the match starts. Both characters play identically."
+	for index in skin_buttons.size():
+		var selected: bool = game.CHARACTER_CATALOG.IDS[index] == game.preferred_character
+		skin_buttons[index].disabled = not game.can_choose_character()
+		skin_buttons[index].set_pressed_no_signal(selected)
+		skin_buttons[index].text = game.CHARACTER_CATALOG.display_name(game.CHARACTER_CATALOG.IDS[index]) + ("\nSelected" if selected else "\nChoose")
+		skin_buttons[index].add_theme_color_override("font_focus_color", CREAM if selected else INK)
 	home_actions.visible = home
 	room_actions.visible = not home
 	controls.CodeInput.visible = direct_test.button_pressed
@@ -206,6 +229,9 @@ func refresh() -> void:
 	var fit_scale := minf(1.0, minf((viewport_size.x - 32) / panel.size.x, (viewport_size.y - 32) / panel.size.y))
 	panel.scale = Vector2.ONE * fit_scale
 	panel.position = (viewport_size - panel.size * fit_scale) * 0.5
+	# A controller can navigate immediately, without a preliminary mouse click.
+	if game.lobby.visible and game.can_choose_character() and get_viewport().gui_get_focus_owner() == null:
+		skin_buttons[game.CHARACTER_CATALOG.IDS.find(game.preferred_character)].grab_focus()
 
 func _take(key: String, destination: Node) -> void:
 	controls[key].reparent(destination)
@@ -242,6 +268,22 @@ func _primary(button: Button) -> void:
 		button.add_theme_stylebox_override(state, style)
 	for color in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		button.add_theme_color_override(color, CREAM)
+
+func _style_skin_button(button: Button) -> void:
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		var selected: bool = state in ["pressed", "hover_pressed"]
+		var fill := INK if selected else (PAPER if state == "normal" else Color("e2e8d4"))
+		var style := _style(fill, INK if selected else LINE, 10)
+		style.content_margin_left = 8
+		style.content_margin_right = 8
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
+		button.add_theme_stylebox_override(state, style)
+	var focus := _style(Color.TRANSPARENT, Color("cb8a33"), 10)
+	focus.set_border_width_all(3)
+	button.add_theme_stylebox_override("focus", focus)
+	button.add_theme_color_override("font_pressed_color", CREAM)
+	button.add_theme_color_override("font_hover_pressed_color", CREAM)
 
 func _make_theme() -> Theme:
 	var result := Theme.new()
