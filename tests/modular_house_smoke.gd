@@ -55,6 +55,12 @@ func run() -> void:
 		if room != null:
 			rooms.append(room)
 			check(room.has_node("Geometry/Floor"), room_name + " needs its own collision floor")
+			for doorway_name in ["Doorway1", "Doorway2"]:
+				var doorway = room.get_node_or_null("Geometry/" + doorway_name)
+				check(doorway != null, room_name + " is missing " + doorway_name)
+				if doorway != null:
+					check(doorway.find_children("*", "Label3D", true, false).is_empty(), "Doorways should not display floating room text")
+					check(doorway.has_node("Header/CollisionShape3D") and doorway.has_node("Threshold"), "Removing room text must preserve the doorway frame")
 			var room_props := 0
 			for obstacle in obstacles:
 				if room.is_ancestor_of(obstacle):
@@ -165,6 +171,8 @@ func run() -> void:
 		await capture(main, "modular-house-overview", Vector3(0, 38, 32), Vector3(0, 0, 0), 44)
 		await capture(main, "living-room", Vector3(25, 8, 8.5), Vector3(18, 0.5, 0), 65)
 		await capture(main, "garage", Vector3(-10, 8, 8.5), Vector3(-18, 0.5, 0), 65)
+		await capture(main, "doorways-living-room", Vector3(3.5, 1.65, 0), Vector3(9, 1.5, 0), 88)
+		await capture(main, "doorways-garage", Vector3(-3.5, 1.65, 0), Vector3(-9, 1.5, 0), 88)
 	main._prepare_session()
 	main.queue_free()
 	await process_frame

@@ -5,6 +5,15 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.55 cartoon stun gun and clean doorways
+
+- Removed the floating room-name text on both sides of every kitchen/living-room/garage passage. Door frames, headers, thresholds, collisions and navigation remain unchanged.
+- Added regression checks for label-free doorways with intact frames, alongside the existing standing-player passage sweeps and modular room tests.
+- Rebuilt the approved stun-gun collectible as a Blender-authored GLB: mint egg-shaped shell, convex cyan lens, thick cream muzzle collar, curved coral grip and cream foot, small gold ready dome, lightning medallions and three gold vents on each side.
+- Refined badge fit, lens size/material, curved grip and foot through repeated actual Godot captures. Restrained cyan lighting, slower spin and a shallow bob keep the shapes readable; the sculpt stays above the saucer throughout its hover. Collection sphere dimensions, one-shot firing, stun duration/range, existing saucer and protocol 16 remain unchanged.
+- Tests cover concept components, the under-50k triangle budget, hover clearance, local collection, remote spawn/removal/respawn and existing gun/game regressions. A two-process localhost test verifies the new model and one-shot inventory via the unchanged authoritative packets. This does not establish WAN/tunnel reliability or low-end performance.
+- Rebuild source: `tools/build_stun_gun.py`. Runtime asset: `art/pickups/stun-gun/`. Approved reference and unretouched game-lighting captures: `docs/art/stun-gun-concept/`.
+
 ## 0.54 Score Ribbons leaderboard
 
 - Implemented approved concept B: separate beveled ceramic pennants with real recessed score channels, rounded player-color fills/badges, a large mint countdown pill and a soft gold crown with a restrained sparkle animation.

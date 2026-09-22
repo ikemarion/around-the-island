@@ -16,6 +16,7 @@ var age: float = 0.0
 var claimed: bool = false
 var materials: Dictionary = {}
 const DESIGN = preload("res://scripts/collectible_design.gd")
+const STUN_GUN_MODEL := preload("res://art/pickups/stun-gun/stun-gun.glb")
 
 
 func configure(new_item_type: StringName, color: Color) -> void:
@@ -30,7 +31,14 @@ func configure(new_item_type: StringName, color: Color) -> void:
 		_build_item_art(color)
 	if has_node("Glow"):
 		(get_node("Glow") as OmniLight3D).light_color = color
-		if item_type != &"stun_gun":
+		if item_type == &"stun_gun":
+			$Glow.light_color = Color("65e7ed")
+			$Glow.light_energy = 0.08
+			$Glow.position = Vector3(-0.68, 0.39, 0)
+			$Glow.omni_range = 1.2
+			spin_speed = 0.65
+			bob_height = 0.09
+		else:
 			$Glow.light_color = Color("ffd68a")
 			$Glow.light_energy = 0.25
 			spin_speed = 0.65
@@ -154,13 +162,13 @@ func _make_speed_shoe(art: Node3D) -> void:
 		art.add_child(badge)
 
 
-func _make_stun_gun(art: Node3D, color: Color) -> void:
-	_capsule(art, Vector3(0.72, 0.32, 0.32), Vector3.ZERO, Color("488e85"), "RayBody").rotation.z = PI / 2.0
-	_box(art, Vector3(0.2, 0.37, 0.22), Vector3(-0.16, -0.23, 0), INK, "Grip")
-	for x in [0.2, 0.32, 0.44]:
-		_torus(art, 0.11, 0.17, Vector3(x, 0, 0), CREAM, "Coil").rotation.z = PI / 2.0
-	_ball(art, Vector3.ONE * 0.24, Vector3(0.5, 0, 0), color, "ChargedTip")
-	_ball(art, Vector3(0.09, 0.09, 0.04), Vector3(-0.12, 0.05, 0.17), color, "ChargeLamp")
+func _make_stun_gun(art: Node3D, _color: Color) -> void:
+	var model := STUN_GUN_MODEL.instantiate() as Node3D
+	model.name = "StunGunModel"
+	model.scale = Vector3.ONE * 0.66
+	# Keep the original collection area; only the sculpt is lifted above the saucer.
+	model.position.y = 0.23
+	art.add_child(model)
 
 func _make_ghost(art: Node3D, _color: Color) -> void:
 	var porcelain := Color("f6ead5")

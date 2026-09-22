@@ -39,7 +39,7 @@ func run() -> void:
 		pickup.global_position = Vector3((index % 5 - 2) * 1.65, 1.25, (index / 5 - 0.5) * 2.0)
 		var art := pickup.get_node("IconArt")
 		assert(art.get_meta("item_type") == String(TYPES[index]))
-		assert(art.get_child_count() >= 3)
+		assert(art.find_children("*", "MeshInstance3D", true, false).size() >= 3)
 	main.camera.gameplay_input_enabled = false
 	main.camera.set_process(false)
 	main.camera.set_physics_process(false)

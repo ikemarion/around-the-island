@@ -106,18 +106,6 @@ func _solid(parent: Node3D, solid_name: String, size: Vector3, at: Vector3, colo
 		_box(body, size, Vector3.ZERO, color, "MeshInstance3D")
 	return body
 
-func _label(parent: Node3D, message: String, at: Vector3, rotation_y: float = 0.0) -> void:
-	var label := Label3D.new()
-	label.text = message
-	label.font_size = 64
-	label.pixel_size = 0.006
-	label.modulate = CREAM
-	label.outline_modulate = INK
-	label.outline_size = 8
-	label.position = at
-	label.rotation.y = rotation_y
-	_node(parent, label, "RoomLabel")
-
 func _build_room() -> void:
 	var geometry := Node3D.new()
 	_node(self, geometry, "Geometry")
@@ -170,10 +158,6 @@ func _build_boundary(parent: Node3D) -> void:
 			_box(doorway, Vector3(0.42, 2.4, 0.1), Vector3(0, 1.2, side * 1.56), CREAM, "DoorTrim")
 		_solid(doorway, "Header", Vector3(0.42, 0.22, 3.22), Vector3(0, 2.51, 0), CREAM)
 		_box(doorway, Vector3(0.65, 0.01, 3.0), Vector3(0, 0.006, 0), GOLD, "Threshold")
-		var title := "LIVING ROOM" if theme == "living_room" else "GARAGE"
-		var facing := PI / 2.0 if entrance_side == "west" else -PI / 2.0
-		_label(doorway, title, Vector3(-0.24 if entrance_side == "west" else 0.24, 2.78, 0), -facing)
-		_label(doorway, "KITCHEN", Vector3(0.24 if entrance_side == "west" else -0.24, 2.78, 0), facing)
 
 func _prop(parent: Node3D, suffix: String, at: Vector3) -> Node3D:
 	var body := RigidBody3D.new()
