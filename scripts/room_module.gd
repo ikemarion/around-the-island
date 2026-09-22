@@ -120,9 +120,7 @@ func _build_room() -> void:
 		for index in 7:
 			_box(floor_art, Vector3(0.022, 0.004, 12), Vector3(-7.5 + index * 2.5, 0.003, 0), Color("b38e62"))
 	else:
-		for x in [-6.0, 0.0, 6.0]:
-			_box(floor_art, Vector3(0.028, 0.004, 12), Vector3(x, 0.003, 0), Color("6b8079"))
-		_box(floor_art, Vector3(18, 0.004, 0.028), Vector3(0, 0.003, 0), Color("6b8079"))
+		preload("res://scripts/garage_art.gd").make_floor(floor_body, floor_art)
 	_build_boundary(geometry)
 	if theme == "garage":
 		_build_garage(geometry)
@@ -220,56 +218,25 @@ func _build_living_room(parent: Node3D) -> void:
 			_cylinder(stool, 0.055, 0.7, Vector3(x, -0.1, z), TEAL, "Leg")
 
 func _build_garage(parent: Node3D) -> void:
-	for side in [-1, 1]:
-		_box(parent, Vector3(6.6, 0.01, 0.08), Vector3(0, 0.009, side * 1.8), GOLD, "ParkingStripe")
+	var art = preload("res://scripts/garage_art.gd")
+	var props = preload("res://scripts/garage_prop_art.gd")
+	art.dress_boundaries(parent, entrance_side)
 	var car := _solid(parent, "ProjectCar", Vector3(5.4, 1.65, 2.55), Vector3(0, 0.825, 0), CORAL, false)
 	preload("res://scripts/house_prop_art.gd").make_car(car)
-	var bench := _solid(parent, "Workbench", Vector3(5.5, 1.0, 1.1), Vector3(0, 0.5, -5.15), TEAL)
-	_box(bench, Vector3(5.7, 0.13, 1.2), Vector3(0, 0.53, 0), GOLD, "WoodTop")
-	for index in 4:
-		_box(bench, Vector3(1.2, 0.32, 0.035), Vector3(-1.98 + index * 1.32, 0.11, 0.56), CORAL, "Drawer")
-		_box(bench, Vector3(0.32, 0.06, 0.07), Vector3(-1.98 + index * 1.32, 0.14, 0.6), CREAM, "DrawerHandle")
-	var board := _solid(parent, "ToolBoard", Vector3(5.6, 1.55, 0.18), Vector3(0, 1.91, -5.65), GOLD)
-	for index in 7:
-		var x := -2.1 + index * 0.7
-		_box(board, Vector3(0.09, 0.56, 0.09), Vector3(x, -0.08, 0.16), INK, "ToolHandle")
-		if index % 2 == 0:
-			_box(board, Vector3(0.38, 0.15, 0.14), Vector3(x, 0.26, 0.16), TEAL, "HammerHead")
-		else:
-			_cylinder(board, 0.15, 0.07, Vector3(x, 0.3, 0.16), CREAM, "WrenchHead").rotation.x = PI / 2.0
+	var bench := _solid(parent, "Workbench", Vector3(5.5, 1.0, 1.1), Vector3(0, 0.5, -5.15), TEAL, false)
+	art.make_workbench(bench)
+	var board := _solid(parent, "ToolBoard", Vector3(5.6, 1.55, 0.18), Vector3(0, 1.91, -5.65), GOLD, false)
+	art.make_toolboard(board)
 	var shutter_x := -8.72 if entrance_side == "east" else 8.72
-	var shutter := _solid(parent, "GarageShutter", Vector3(0.15, 2.9, 4.0), Vector3(shutter_x, 1.45, 0), Color("71877e"))
-	for index in 7:
-		_box(shutter, Vector3(0.17, 0.035, 3.85), Vector3(0, -1.2 + index * 0.4, 0), INK, "ShutterSeam")
+	var shutter := _solid(parent, "GarageShutter", Vector3(0.15, 2.9, 4.0), Vector3(shutter_x, 1.45, 0), Color("71877e"), false)
+	art.make_shutter(shutter, entrance_side)
 	var tire := _prop(parent, "Tire", Vector3(-4.0, 0.55, 1.4))
-	var tire_shape := TorusMesh.new()
-	tire_shape.inner_radius = 0.22
-	tire_shape.outer_radius = 0.43
-	tire_shape.rings = 20
-	tire_shape.ring_segments = 12
-	var tire_mesh := _mesh(tire, tire_shape, Vector3.ZERO, INK, "RubberTire")
-	tire_mesh.rotation.x = PI / 2.0
-	for index in 12:
-		var angle := TAU * index / 12.0
-		var tread := _box(tire, Vector3(0.12, 0.045, 0.16), Vector3(sin(angle) * 0.42, cos(angle) * 0.42, 0), Color("3a5350"), "Tread")
-		tread.rotation.z = -angle
+	props.make_tire(tire)
 	var toolbox := _prop(parent, "Toolbox", Vector3(3.8, 0.55, -1.5))
-	_box(toolbox, Vector3(0.84, 0.57, 0.65), Vector3(0, -0.13, 0), CORAL, "ToolboxBody")
-	_ball(toolbox, Vector3(0.87, 0.24, 0.68), Vector3(0, 0.18, 0), Color("f09372"), "RoundedLid")
-	for side in [-1, 1]:
-		_box(toolbox, Vector3(0.07, 0.18, 0.08), Vector3(side * 0.17, 0.32, 0), INK, "HandleUpright")
-	_box(toolbox, Vector3(0.4, 0.07, 0.08), Vector3(0, 0.41, 0), INK, "Handle")
-	_box(toolbox, Vector3(0.13, 0.15, 0.025), Vector3(0, 0.03, -0.34), CREAM, "Latch")
+	props.make_toolbox(toolbox)
 	var paint := _prop(parent, "PaintCan", Vector3(-5.4, 0.55, -1.8))
-	_cylinder(paint, 0.36, 0.76, Vector3(0, -0.03, 0), CREAM, "PaintCanBody")
-	_cylinder(paint, 0.365, 0.38, Vector3(0, -0.07, 0), TEAL, "PaintLabel")
-	_cylinder(paint, 0.39, 0.045, Vector3(0, 0.37, 0), INK, "Lid")
-	_ball(paint, Vector3(0.45, 0.035, 0.41), Vector3(0, 0.4, 0), CORAL, "PaintSplash")
+	props.make_paint_can(paint)
 	var cart := _prop(parent, "ToolCart", Vector3(4.9, 0.55, 4.65))
-	_box(cart, Vector3(0.82, 0.67, 0.67), Vector3(0, -0.02, 0), TEAL, "CartBody")
-	_box(cart, Vector3(0.87, 0.08, 0.72), Vector3(0, 0.34, 0), INK, "CartTop")
-	for index in 3:
-		_box(cart, Vector3(0.67, 0.14, 0.025), Vector3(0, -0.2 + index * 0.18, -0.35), GOLD, "Drawer")
-	for x in [-0.28, 0.28]:
-		for z in [-0.24, 0.24]:
-			_ball(cart, Vector3.ONE * 0.17, Vector3(x, -0.37, z), INK, "Caster")
+	props.make_tool_cart(cart)
+	for movable_art in [tire, toolbox, paint, cart]:
+		art.finish(movable_art)

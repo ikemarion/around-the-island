@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play
 
-The current local package is **ATI v0.61 for Windows**: [ATI-v0.61-Windows.zip](releases/ATI-v0.61-Windows.zip). Extract the whole folder and run `ATI-v0.61.exe`. GitHub publishing remains paused; this local package is not a new published download. Use v0.61 on everyone's PC to get all fixes. The wire protocol remains 17.
+The current local package is **ATI v0.62 for Windows**: [ATI-v0.62-Windows.zip](releases/ATI-v0.62-Windows.zip). Extract the whole folder and run `ATI-v0.62.exe`. GitHub publishing remains paused; this local package is not a new published download. Use v0.62 on everyone's PC for matching visuals and all fixes. The wire protocol remains 17.
 
 - The configured host opens **Host lobby** and keeps Playit running.
 - Friends open the same build and choose **Join lobby**. No codes or networking software are needed on their PCs.
@@ -13,7 +13,18 @@ The current local package is **ATI v0.61 for Windows**: [ATI-v0.61-Windows.zip](
 
 See [ONLINE-PLAY.md](ONLINE-PLAY.md) for the supported hosting arrangement and [NETWORK-RELIABILITY.md](NETWORK-RELIABILITY.md) for connection-report collection.
 
-## v0.61 maintenance update
+## v0.62 garage art update
+
+- Reworked the garage around the approved coral-and-cream vintage car and warm, rounded kitchen reference: sculpted car body, cream cabin, detailed windows, wheels, lights and trim.
+- Added sage inset workshop cabinets, wood-grain surfaces, perforated toolboard, recognizable hand tools, bench vise, enamel task lamp, parts bins and a few restrained tabletop details.
+- Replaced the plain shutter with a paneled garage door, cream window frames, hinges, wood jambs and a lift handle. Resurfaced the garage floor and softened its parking markings.
+- Rebuilt the movable tire, toolbox, paint can and rolling cart with matching materials and hardware.
+- Added a localized garage fill light and lightweight 2× edge antialiasing. Static workshop details are batched by material and use less dense bevel geometry than the hero car.
+- Preserved the original routes, collisions, four garage prop IDs, pickup markers, physics and multiplayer protocol. No full-height walls or additional obstacles were added.
+
+[Actual in-game captures and design notes](docs/art/garage-refresh/README.md). This is game geometry rendered by Godot, not a replacement concept image.
+
+## Included v0.61 maintenance fixes
 
 - Restores the intended unlimited ENet host bandwidth after an engine argument mismatch could impose a five-byte/second incoming cap. Controlled local packet delivery improved; a new remote playtest is still required.
 - Repeated network acknowledgements no longer immediately cancel a guest's slide or snap them backward; genuine resynchronization remains bounded.

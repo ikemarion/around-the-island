@@ -223,80 +223,259 @@ static func make_tv(parent: Node3D) -> void:
 	icon.material_override.cull_mode = BaseMaterial3D.CULL_DISABLED
 
 static func make_car(parent: Node3D) -> void:
-	# +X is the nose; parts keep the original vehicle's footprint.
-	box(parent,Vector3(5.12,0.69,2.25),Vector3(0,-0.09,0),CORAL,"Coachwork",0.32,0.28)
-	var bonnet := box(parent,Vector3(1.82,0.62,1.94),Vector3(1.52,0.20,0),CORAL.lightened(0.04),"Bonnet",0.30,0.27)
-	bonnet.scale.y = 0.48
-	box(parent,Vector3(1.05,0.21,1.99),Vector3(-1.92,0.23,0),CORAL,"Boot",0.10,0.3)
-	piece(parent,cabin_patch(-1.60,1.12,0,TAU,0),Vector3.ZERO,CREAM,"SculptedCabin",0.32)
-	piece(parent,cabin_patch(0.62,1.03,0.50,PI-0.50,0.008),Vector3.ZERO,Color("659e99"),"CurvedWindshield",0.2)
-	piece(parent,cabin_patch(-1.45,-1.08,0.6,PI-0.6,0.008),Vector3.ZERO,Color("659e99"),"CurvedRearGlass",0.2)
+	# +X is the nose. Visual-only, centered on the unchanged 5.4 x 1.65 x 2.55 collider.
+	# The low waist and upright glazing make a friendly compact, not a glass capsule.
+	var paint := Color("d76453")
+	var ivory := Color("f3dfb6")
+	var rubber := Color("283633")
+	piece(parent,_car_body_mesh(),Vector3.ZERO,paint,"Coachwork",0.31)
+	var roof := piece(parent,_car_roof_mesh(),Vector3.ZERO,ivory,"SculptedCabin",0.42)
+	var roof_material := roof.material_override.duplicate() as StandardMaterial3D
+	roof_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	roof.material_override = roof_material
+	box(parent,Vector3(2.58,0.12,1.96),Vector3(-0.27,0.235,0),paint,"CabinBelt",0.058,0.36)
+	# Actual hollow cabin: tinted panes, cream pillars, upholstered seats and steering wheel.
 	for side in [-1,1]:
-		for span in [Vector2(-1.16,-0.38),Vector2(-0.28,0.58)]:
-			var a := -0.24 if side > 0 else PI-0.96
-			var b := 0.96 if side > 0 else PI+0.24
-			piece(parent,cabin_patch(span.x,span.y,a,b,0.012),Vector3.ZERO,Color("659e99"),"CurvedSideWindow",0.22)
-		box(parent,Vector3(2.19,0.042,0.05),Vector3(-0.29,0.27,side*1.001),CREAM,"WindowSill",0.02)
-		var panel := Node3D.new()
-		parent.add_child(panel)
-		panel.position = Vector3(-0.26,-0.01,side*1.135)
-		seam(panel,Vector2(1.70,0.48),Vector3.ZERO,0.14,CORAL.darkened(0.22),"DoorShutLine")
-		box(parent,Vector3(0.26,0.052,0.075),Vector3(-0.84,0.17,side*1.19),GOLD,"DoorHandle",0.022,0.3)
-		rod(parent,Vector3(0.8,0.33,side*1.03),Vector3(0.85,0.43,side*1.3),0.025,CREAM,"MirrorStalk")
-		ball(parent,Vector3(0.16,0.24,0.08),Vector3(0.85,0.46,side*1.31),CREAM,"Mirror")
+		box(parent,Vector3(0.58,0.13,0.66),Vector3(-0.12,0.28,side*0.46),TEAL.darkened(0.28),"SeatBase",0.064,0.95)
+		var seat := box(parent,Vector3(0.15,0.53,0.66),Vector3(-0.42,0.50,side*0.46),Color("727b62"),"SeatBack",0.072,0.94)
+		seat.rotation.z = -0.12
+	box(parent,Vector3(0.40,0.20,1.59),Vector3(0.89,0.32,0),TEAL.darkened(0.24),"Dashboard",0.09,0.82)
+	var steering := Node3D.new()
+	steering.name = "SteeringWheel"
+	parent.add_child(steering)
+	steering.position = Vector3(0.62,0.54,0.47)
+	steering.rotation.z = -0.42
+	_car_ring(steering,0.24,0.026,Vector3.ZERO,ivory,"SteeringRim",Vector3(0,0,PI/2))
+	rod(steering,Vector3(0,0,0),Vector3(0,0.22,0),0.019,ivory,"SteeringSpoke")
+	rod(steering,Vector3(0,0,0),Vector3(0,-0.15,-0.17),0.019,ivory,"SteeringSpoke")
+	rod(steering,Vector3(0,0,0),Vector3(0,-0.15,0.17),0.019,ivory,"SteeringSpoke")
+	var pane: Array[Vector2] = [Vector2(-1,0),Vector2(1,0),Vector2(1,1),Vector2(-1,1)]
+	_car_window(parent,pane,"front",1,"CurvedWindshield",0.16)
+	_car_window(parent,pane,"rear",1,"CurvedRearGlass",0.11)
+	var front_side: Array[Vector2] = [Vector2(-0.40,0.29),Vector2(1.06,0.29),Vector2(0.79,0.82),Vector2(0.51,1.02),Vector2(-0.40,1.045)]
+	var rear_side: Array[Vector2] = [Vector2(-1.57,0.29),Vector2(-0.54,0.29),Vector2(-0.54,1.045),Vector2(-1.14,1.02),Vector2(-1.40,0.80)]
+	for side in [-1,1]:
+		_car_window(parent,front_side,"side",side,"CurvedSideWindow",0.09)
+		_car_window(parent,rear_side,"side",side,"CurvedQuarterWindow",0.08)
+		rod(parent,Vector3(-0.47,0.28,side*1.004),Vector3(-0.47,1.05,side*0.88),0.05,ivory,"CreamCenterPillar")
+		box(parent,Vector3(2.55,0.032,0.042),Vector3(-0.26,0.217,side*1.065),ivory,"WaistPinstripe",0.014,0.48)
+		var shut: Array[Vector3] = []
+		for p in _car_round_outline([Vector2(-0.85,0.17),Vector2(0.97,0.17),Vector2(0.73,-0.37),Vector2(-0.89,-0.37)],0.09):
+			var top := 0.295-0.14*pow(maxf(0,p.x)/2.5,5)-0.08*pow(maxf(0,-p.x)/2.5,5)
+			var normalized_y := clampf((p.y-(top-0.47)*0.5)/((top+0.47)*0.5),-1,1)
+			var angle := asin(signf(normalized_y)*pow(absf(normalized_y),1/0.68))
+			var point := _car_body_point(p.x,angle)
+			shut.append(Vector3(point.x,point.y,side*(point.z+0.009)))
+		_car_tube(parent,shut,0.010,paint.darkened(0.36),"DoorShutLine")
+		ball(parent,Vector3(0.32,0.095,0.045),Vector3(-0.67,0.065,side*1.08),paint.darkened(0.18),"HandleRecess")
+		box(parent,Vector3(0.27,0.045,0.064),Vector3(-0.67,0.071,side*1.123),GOLD,"DoorHandle",0.021,0.32)
+		rod(parent,Vector3(0.81,0.30,side*1.02),Vector3(0.75,0.41,side*1.18),0.025,GOLD,"MirrorStalk")
+		ball(parent,Vector3(0.16,0.23,0.13),Vector3(0.75,0.46,side*1.19),ivory,"Mirror",0.32)
+		ball(parent,Vector3(0.017,0.168,0.094),Vector3(0.672,0.46,side*1.19),Color("71978f"),"MirrorGlass",0.2)
 		for x in [-1.68,1.68]:
-			ball(parent,Vector3(1.43,0.82,0.55),Vector3(x,-0.02,side*1.05),CORAL,"SculptedFender",0.28)
-			ball(parent,Vector3(1.12,1.08,0.12),Vector3(x,-0.30,side*1.282),INK,"WheelArchRecess",0.95)
+			ball(parent,Vector3(1.20,1.14,0.10),Vector3(x,-0.27,side*1.087),rubber,"WheelArchRecess",0.98)
+			var fender := piece(parent,_car_fender_mesh(side),Vector3(x,-0.27,0),paint,"SculptedFender",0.31)
+			fender.material_override = fender.mesh.surface_get_material(0)
 			var tire := CylinderMesh.new()
-			tire.top_radius = 0.47
-			tire.bottom_radius = 0.47
-			tire.height = 0.24
-			tire.radial_segments = 48
-			piece(parent,tire,Vector3(x,-0.32,side*1.23),Color("263332"),"Tire",0.98).rotation.x = PI/2
-			ball(parent,Vector3(0.80,0.80,0.15),Vector3(x,-0.32,side*1.36),Color("364340"),"TireSidewall",0.95)
-			ball(parent,Vector3(0.56,0.56,0.16),Vector3(x,-0.32,side*1.415),CREAM,"Hubcap",0.3)
-			ball(parent,Vector3(0.39,0.39,0.04),Vector3(x,-0.32,side*1.50),CREAM.darkened(0.13),"HubInset",0.35)
-		ball(parent,Vector3(0.17,0.43,0.43),Vector3(2.52,0.08,side*0.78),CREAM,"HeadlightRim",0.35)
-		ball(parent,Vector3(0.11,0.31,0.31),Vector3(2.61,0.08,side*0.78),Color("d4e1bb"),"HeadlightLens",0.2)
-		ball(parent,Vector3(0.085,0.12,0.12),Vector3(2.57,-0.24,side*0.80),GOLD,"IndicatorLens",0.25)
-		ball(parent,Vector3(0.08,0.21,0.22),Vector3(-2.55,0,side*0.78),Color("a73e32"),"TailLight",0.3)
-	var rim := box(parent,Vector3(0.50,0.45,1.09),Vector3(2.55,-0.08,0),CREAM,"GrilleRim",0.21)
-	rim.scale.x = 0.24
-	var grille := box(parent,Vector3(0.38,0.34,0.94),Vector3(2.62,-0.08,0),INK,"GrilleRecess",0.16)
-	grille.scale.x = 0.20
-	for y in [-0.18,-0.08,0.02]:
-		box(parent,Vector3(0.04,0.024,0.88),Vector3(2.66,y,0),CREAM,"GrilleSlat",0.01)
-	for x in [-2.60,2.65]:
-		box(parent,Vector3(0.17,0.19,1.96),Vector3(x,-0.38,0),CREAM,"CreamBumper",0.08)
+			tire.top_radius = 0.525
+			tire.bottom_radius = 0.525
+			tire.height = 0.22
+			tire.radial_segments = 32
+			piece(parent,tire,Vector3(x,-0.275,side*1.105),rubber,"Tire",0.96).rotation.x = PI/2
+			ball(parent,Vector3(0.98,0.98,0.18),Vector3(x,-0.275,side*1.178),rubber.lightened(0.025),"TireSidewall",0.98)
+			_car_ring(parent,0.359,0.027,Vector3(x,-0.275,side*1.273),ivory,"CreamWheelRim",Vector3(PI/2,0,0))
+			ball(parent,Vector3(0.64,0.64,0.10),Vector3(x,-0.275,side*1.249),Color("687e6c"),"HubInset",0.45)
+			_car_ring(parent,0.286,0.012,Vector3(x,-0.275,side*1.303),GOLD,"HubcapBead",Vector3(PI/2,0,0))
+			ball(parent,Vector3(0.53,0.53,0.14),Vector3(x,-0.275,side*1.28),ivory,"Hubcap",0.38)
+		# Chunky inset rings make the large headlights feel part of the wings.
+		ball(parent,Vector3(0.23,0.51,0.51),Vector3(2.40,0.085,side*0.77),ivory,"HeadlightRim",0.38)
+		ball(parent,Vector3(0.10,0.41,0.41),Vector3(2.525,0.085,side*0.77),Color("6f8476"),"HeadlightGasket",0.6)
+		ball(parent,Vector3(0.19,0.37,0.37),Vector3(2.535,0.085,side*0.77),Color("e0e5c8"),"HeadlightLens",0.19)
+		ball(parent,Vector3(0.11,0.19,0.19),Vector3(2.48,-0.235,side*0.79),ivory,"IndicatorRim",0.42)
+		ball(parent,Vector3(0.085,0.145,0.145),Vector3(2.54,-0.235,side*0.79),Color("d09b39"),"IndicatorLens",0.26)
+		ball(parent,Vector3(0.10,0.25,0.19),Vector3(-2.45,-0.11,side*0.79),ivory,"TailLightRim",0.42)
+		ball(parent,Vector3(0.09,0.19,0.14),Vector3(-2.51,-0.10,side*0.79),Color("9f3d30"),"TailLight",0.3)
+	var rim := box(parent,Vector3(0.52,0.51,1.12),Vector3(2.46,-0.125,0),ivory,"GrilleRim",0.245,0.42)
+	rim.scale.x = 0.25
+	var grille := box(parent,Vector3(0.40,0.39,0.99),Vector3(2.525,-0.125,0),rubber,"GrilleRecess",0.19,0.76)
+	grille.scale.x = 0.19
+	for y in [-0.235,-0.12,-0.005]:
+		box(parent,Vector3(0.045,0.036,0.90),Vector3(2.572,y,0),ivory,"GrilleSlat",0.017,0.43)
+	box(parent,Vector3(0.038,0.35,0.036),Vector3(2.58,-0.125,0),ivory,"GrilleCenter",0.017,0.44)
+	for nose in [-1,1]:
+		var bumper: Array[Vector3] = []
+		for i in 17:
+			var z := lerpf(-1.01,1.01,float(i)/16)
+			bumper.append(Vector3(nose*(2.57-0.15*pow(absf(z),4)),-0.42,z))
+		_car_tube(parent,bumper,0.091,ivory,"CreamBumper",false)
 		for side in [-1,1]:
-			box(parent,Vector3(0.21,0.34,0.15),Vector3(x,-0.32,side*0.7),CREAM,"BumperGuard",0.07)
-	box(parent,Vector3(0.15,0.022,0.10),Vector3(2.16,0.36,0),GOLD,"BonnetBadge",0.01)
+			box(parent,Vector3(0.21,0.35,0.155),Vector3(nose*2.60,-0.365,side*0.72),ivory,"BumperGuard",0.072,0.43)
+			ball(parent,Vector3.ONE*0.033,Vector3(nose*2.682,-0.415,side*0.92),GOLD,"BumperRivet",0.58)
+	# Bonnet panel is a thin engraved contour following the sculpted upper shell.
+	var bonnet_line: Array[Vector3] = []
+	for p in _car_round_outline([Vector2(0.88,-0.62),Vector2(2.18,-0.53),Vector2(2.18,0.53),Vector2(0.88,0.62)],0.14):
+		bonnet_line.append(_car_body_point(p.x,acos(clampf(p.y/1.05,-1,1)))+Vector3(0,0.007,0))
+	_car_tube(parent,bonnet_line,0.007,paint.darkened(0.22),"BonnetSeam")
+	var badge := ball(parent,Vector3(0.17,0.029,0.10),Vector3(2.20,0.235,0),GOLD,"BonnetBadge",0.35)
+	badge.rotation.z = -0.26
+	# Small trim cannot affect the silhouette's lighting and needn't cast dozens of shadows.
+	for trim in parent.find_children("*","MeshInstance3D",true,false):
+		if str(trim.name).contains("Glass") or str(trim.name).contains("Bead") or str(trim.name).contains("Seam") or str(trim.name).contains("Slat") or str(trim.name).contains("Rivet"):
+			trim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-static func cabin_point(x: float, angle: float, offset: float) -> Vector3:
-	var profile := [Vector3(-1.60,0.35,0.70),Vector3(-1.38,0.72,0.88),Vector3(-0.95,1.02,0.96),Vector3(-0.40,1.11,0.98),Vector3(0.24,1.08,0.97),Vector3(0.68,0.91,0.94),Vector3(1.12,0.31,0.78)]
-	var high := 0.3
-	var width := 0.8
-	for i in profile.size()-1:
-		if x >= profile[i].x and x <= profile[i+1].x:
-			var t := inverse_lerp(profile[i].x,profile[i+1].x,x)
-			high = lerpf(profile[i].y,profile[i+1].y,t)
-			width = lerpf(profile[i].z,profile[i+1].z,t)
-			break
-	var half := (high-0.23)*0.5
-	var y := (high+0.23)*0.5+signf(sin(angle))*pow(absf(sin(angle)),0.72)*half
-	var z := signf(cos(angle))*pow(absf(cos(angle)),0.72)*(width+offset)
-	return Vector3(x,y+offset,z)
+static func _car_body_point(x: float, angle: float) -> Vector3:
+	var width := 1.055-0.19*pow(absf(x)/2.5,8)
+	var top := 0.295-0.14*pow(maxf(0,x)/2.5,5)-0.08*pow(maxf(0,-x)/2.5,5)
+	var middle := (top-0.47)*0.5
+	var half := (top+0.47)*0.5
+	return Vector3(x,middle+signf(sin(angle))*pow(absf(sin(angle)),0.68)*half,signf(cos(angle))*pow(absf(cos(angle)),0.48)*width)
 
-static func cabin_patch(x0: float, x1: float, a0: float, a1: float, offset: float) -> ArrayMesh:
+static func _car_roof_point(angle: float, radial: float) -> Vector3:
+	# A shallow soft dome, not a beveled cube. Maximum world height is 2.0m.
+	return Vector3(-0.32+1.19*signf(cos(angle))*pow(absf(cos(angle)),0.40)*radial,0.945+0.23*sqrt(maxf(0,1-radial*radial)),0.99*signf(sin(angle))*pow(absf(sin(angle)),0.40)*radial)
+
+static func _car_roof_mesh() -> ArrayMesh:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring in 14:
+		for i in 64:
+			for uv in [Vector2(i,ring),Vector2(i+1,ring+1),Vector2(i+1,ring),Vector2(i,ring),Vector2(i,ring+1),Vector2(i+1,ring+1)]:
+				var angle: float = uv.x*TAU/64
+				var radial: float = uv.y/14
+				var da := _car_roof_point(angle+0.0001,radial)-_car_roof_point(angle-0.0001,radial)
+				var dr := _car_roof_point(angle,minf(1,radial+0.0001))-_car_roof_point(angle,maxf(0,radial-0.0001))
+				surface.set_normal(da.cross(dr).normalized() if radial>0 else Vector3.UP)
+				surface.add_vertex(_car_roof_point(angle,radial))
+	return surface.commit()
+
+static func _car_body_mesh() -> ArrayMesh:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 40:
+		for j in 40:
+			for ij in [Vector2(i,j),Vector2(i+1,j+1),Vector2(i+1,j),Vector2(i,j),Vector2(i,j+1),Vector2(i+1,j+1)]:
+				var x := lerpf(-2.47,2.47,ij.x/40)
+				var a: float = TAU*ij.y/40
+				var dx := _car_body_point(x+0.001,a)-_car_body_point(x-0.001,a)
+				var da := _car_body_point(x,a+0.001)-_car_body_point(x,a-0.001)
+				surface.set_normal(dx.cross(da).normalized())
+				surface.add_vertex(_car_body_point(x,a))
+	for x in [-2.47,2.47]:
+		for j in 40:
+			var points: Array[Vector3] = [Vector3(x,-0.15,0),_car_body_point(x,TAU*j/40),_car_body_point(x,TAU*(j+1)/40)]
+			if x < 0: points.reverse()
+			for p in points:
+				surface.set_normal(Vector3(signf(x),0,0))
+				surface.add_vertex(p)
+	return surface.commit()
+
+static func _car_round_outline(outline: Array[Vector2], distance: float) -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	for i in outline.size():
+		var corner := outline[i]
+		var previous := outline[posmod(i-1,outline.size())]
+		var next := outline[(i+1)%outline.size()]
+		var a := corner.move_toward(previous,minf(distance,corner.distance_to(previous)*0.4))
+		var b := corner.move_toward(next,minf(distance,corner.distance_to(next)*0.4))
+		for step in 6:
+			var t := float(step)/5
+			points.append(a.lerp(corner,t).lerp(corner.lerp(b,t),t))
+	return points
+
+static func _car_window_point(p: Vector2, kind: String, side: int) -> Vector3:
+	if kind == "front":
+		return Vector3(lerpf(1.115,0.655,p.y)+0.055*(1-p.x*p.x)*sin(p.y*PI),lerpf(0.29,1.045,p.y),p.x*lerpf(0.983,0.855,p.y))
+	if kind == "rear":
+		return Vector3(lerpf(-1.645,-1.31,p.y)-0.035*(1-p.x*p.x)*sin(p.y*PI),lerpf(0.29,0.99,p.y),p.x*lerpf(0.983,0.865,p.y))
+	return Vector3(p.x,p.y,side*(1.035-(p.y-0.235)*0.17))
+
+static func _car_window(parent: Node3D, outline: Array[Vector2], kind: String, side: int, title: String, radius: float) -> void:
+	var points := _car_round_outline(outline,radius)
+	var center := Vector2.ZERO
+	for p in points: center += p
+	center /= points.size()
+	var border: Array[Vector3] = []
+	for p in points: border.append(_car_window_point(p,kind,side))
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for ring in 5:
+		for i in points.size():
+			var next := (i+1)%points.size()
+			for uv in [Vector2(i,ring),Vector2(next,ring+1),Vector2(i,ring+1),Vector2(i,ring),Vector2(next,ring),Vector2(next,ring+1)]:
+				var p := center.lerp(points[int(uv.x)],uv.y/5)
+				var dx := _car_window_point(p+Vector2(0.001,0),kind,side)-_car_window_point(p-Vector2(0.001,0),kind,side)
+				var dy := _car_window_point(p+Vector2(0,0.001),kind,side)-_car_window_point(p-Vector2(0,0.001),kind,side)
+				surface.set_normal(dx.cross(dy).normalized()*(side if kind == "side" else (-1 if kind == "front" else 1)))
+				surface.add_vertex(_car_window_point(p,kind,side))
+	var glass := piece(parent,surface.commit(),Vector3.ZERO,Color("8abab0"),title,0.18)
+	var mat := material(Color("80b5ac"),0.24).duplicate() as StandardMaterial3D
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color.a = 0.56
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	glass.material_override = mat
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var frame_normal := Vector3.BACK if kind == "side" else Vector3.RIGHT
+	_car_tube(parent,border,0.044,Color("f3dfb6"),title+"CreamSurround",true,frame_normal)
+	# Thin inside rubber bead, separate from the broad cream pillars.
+	var seal: Array[Vector3] = []
+	for p in points: seal.append(_car_window_point(center.lerp(p,0.89),kind,side))
+	_car_tube(parent,seal,0.012,Color("527b70"),title+"RubberSeal",true,frame_normal)
+
+static func _car_fender_point(a: float, t: float, side: int) -> Vector3:
+	var radius := 0.565+0.22*sin(t*PI)-0.07*t
+	return Vector3(cos(a)*radius,sin(a)*radius,side*(1.19+0.13*sin(t*PI)-0.39*t))
+
+static func _car_fender_mesh(side: int) -> ArrayMesh:
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in 32:
-		for j in 24:
-			for ij in [Vector2(i,j),Vector2(i+1,j+1),Vector2(i+1,j),Vector2(i,j),Vector2(i,j+1),Vector2(i+1,j+1)]:
-				var x := lerpf(x0,x1,ij.x/32)
-				var a := lerpf(a0,a1,ij.y/24)
-				var dx := cabin_point(minf(1.12,x+0.001),a,offset)-cabin_point(maxf(-1.60,x-0.001),a,offset)
-				var da := cabin_point(x,a+0.001,offset)-cabin_point(x,a-0.001,offset)
-				surface.set_normal(dx.cross(da).normalized())
-				surface.add_vertex(cabin_point(x,a,offset))
-	return surface.commit()
+		for j in 8:
+			var corners := [Vector2(i,j),Vector2(i+1,j+1),Vector2(i+1,j),Vector2(i,j),Vector2(i,j+1),Vector2(i+1,j+1)]
+			if side > 0: corners.reverse()
+			for ij in corners:
+				var a := lerpf(-0.16,PI+0.16,ij.x/32)
+				var t: float = ij.y/8
+				var da := _car_fender_point(a+0.001,t,side)-_car_fender_point(a-0.001,t,side)
+				var dt := _car_fender_point(a,t+0.001,side)-_car_fender_point(a,t-0.001,side)
+				surface.set_normal(da.cross(dt).normalized()*-side)
+				surface.add_vertex(_car_fender_point(a,t,side))
+	var mesh := surface.commit()
+	# The far-side arch shares topology with the near side; render both faces.
+	var arch_material := material(Color("d76453"),0.31).duplicate() as StandardMaterial3D
+	arch_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mesh.surface_set_material(0,arch_material)
+	return mesh
+
+static func _car_tube(parent: Node3D, points: Array[Vector3], radius: float, color: Color, title: String, closed := true, reference := Vector3.UP) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var ring_count := points.size()
+	for i in ring_count if closed else ring_count-1:
+		var j := (i+1)%ring_count
+		for segment in 8:
+			for corner in [Vector2(i,segment),Vector2(j,segment),Vector2(j,segment+1),Vector2(i,segment),Vector2(j,segment+1),Vector2(i,segment+1)]:
+				var index := int(corner.x)
+				var previous := posmod(index-1,ring_count) if closed else maxi(0,index-1)
+				var next := (index+1)%ring_count if closed else mini(ring_count-1,index+1)
+				var forward := (points[next]-points[previous]).normalized()
+				var u := forward.cross(reference if absf(forward.dot(reference))<0.98 else Vector3.FORWARD).normalized()
+				var v := forward.cross(u).normalized()
+				var angle: float = corner.y*TAU/8
+				var normal := u*cos(angle)+v*sin(angle)
+				surface.set_normal(normal)
+				surface.add_vertex(points[int(corner.x)]+normal*radius)
+	var trim := piece(parent,surface.commit(),Vector3.ZERO,color,title,0.45)
+	var trim_mat := trim.material_override.duplicate() as StandardMaterial3D
+	trim_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	trim.material_override = trim_mat
+	trim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+static func _car_ring(parent: Node3D, radius: float, thickness: float, at: Vector3, color: Color, title: String, rotation: Vector3) -> void:
+	var shape := TorusMesh.new()
+	shape.inner_radius = radius-thickness
+	shape.outer_radius = radius+thickness
+	shape.rings = 32
+	shape.ring_segments = 8
+	var trim := piece(parent,shape,at,color,title,0.43)
+	trim.rotation = rotation
+	trim.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

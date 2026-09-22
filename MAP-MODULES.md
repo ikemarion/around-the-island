@@ -10,6 +10,8 @@ The two new scenes use `scripts/room_module.gd`, an `@tool` script that previews
 
 The kitchen scene uses ordinary editable nodes for its furniture, floor, and dividers. Open that scene directly to change them.
 
+The v0.62 garage separates its gameplay shell from its art. `scripts/room_module.gd` owns the existing bodies, dimensions, prop IDs and pickup locations. `scripts/garage_art.gd` decorates the workshop, floor, boundaries and shutter; `scripts/garage_prop_art.gd` builds the four movable props; `scripts/house_prop_art.gd` builds the hero car. `garage_art.finish()` merges opaque static details by material/shadow mode and retains named inspection anchors. Object-space wood/pegboard shaders stay unmerged. Edit those source builders, not their generated mesh batches. The other entrance orientation and rotated/transformed modules are covered by the visual integration regression.
+
 ## Adding or rearranging modules
 
 1. Instance a room scene under `Arena/Rooms`, then move/rotate it using the 18×12 grid.
@@ -27,3 +29,5 @@ Room construction is deterministic: do not randomly rename, omit, or reposition 
 Run `tests/modular_house_smoke.gd` with Godot's `--script` option to check passage clearance, floor and pickup coverage, navigation, prop identity/reset/replication, and fall recovery. Add `-- --check-bot` to exercise a live chase through all three rooms. Graphical mode also saves overview and room images to `build/network-test/`.
 
 `tests/network_lifecycle.gd` with paired host/client instances checks joining, rejoining, item effects, and a moved garage prop across the network.
+
+`tests/garage_visual_integration.gd` checks the exact gameplay shell, deterministic rebuilds, art landmarks, movable prop envelopes and rendering budget. `tests/garage_art_preview.gd` captures five garage views using the actual main scene and production lighting; run it graphically, not headless.
