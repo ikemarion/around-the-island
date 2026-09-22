@@ -34,6 +34,11 @@ func host_room(port: int = DEFAULT_PORT, use_upnp: bool = true, tunnel_address: 
 	if error != OK:
 		host_failed.emit("Lobby NOT opened: UDP port %d is unavailable (error %d). Another ATI window may already be hosting. Close that host before retrying here; do not join a second window on this PC." % [port, error])
 		return
+	# Godot 4.7.2 ed1daf0bf forwards max_channels + 2 as incoming bandwidth
+	# in create_server. Restore the intended unlimited default before admission;
+	# otherwise three channels can advertise 5 bytes/sec and drop guest input.
+	# Safe on corrected engine versions too; the game's rate limits stay intact.
+	peer.get_host().bandwidth_limit(0, 0)
 	multiplayer.multiplayer_peer = peer
 
 	if not tunnel_address.is_empty():

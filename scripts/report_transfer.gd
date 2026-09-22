@@ -70,6 +70,12 @@ func _load_next() -> void:
 
 func _process(delta: float) -> void:
 	if game.session_mode != &"client" or game.local_slot < 0 or payload.is_empty(): return
+	var peer := multiplayer.multiplayer_peer
+	# Session state can briefly outlive its transport during a disconnect.
+	# OfflineMultiplayerPeer also reports connected, but RPC to host 1 would
+	# target ourselves rather than an actual admitted server connection.
+	if peer == null or peer is OfflineMultiplayerPeer or multiplayer.is_server() or peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
 	timer -= delta
 	if timer > 0: return
 	# One small outstanding datagram. Retries do not build a reliable queue.
@@ -93,9 +99,16 @@ func accept_chunk(sender: int, id: String, total: int, at: int, data: PackedByte
 	budgets[sender] = budget
 	var folder: String = game.network_diagnostics.directory + "/received"
 	var target := folder.path_join(id+".json")
-	if FileAccess.file_exists(target): return total
+	if _stored_report_matches(target,id,total):
+		if incoming.has(sender) and incoming[sender].id == id:
+			incoming.erase(sender)
+		return total
 	var state: Dictionary = incoming.get(sender,{"id":id,"total":total,"data":PackedByteArray()})
 	if state.id != id or state.total != total: return -1
+	# A completed buffer is not a persisted report. Retry a failed write before
+	# acknowledging completion, even when this is a duplicate final chunk.
+	if state.data.size() == total:
+		return _persist_report(sender,id,state.data,folder,target)
 	if at != state.data.size(): return state.data.size()
 	state.data.append_array(data)
 	incoming[sender] = state
@@ -107,22 +120,35 @@ func accept_chunk(sender: int, id: String, total: int, at: int, data: PackedByte
 	if not parsed is Dictionary or not parsed.has("recent_events") or not parsed.has("build"):
 		incoming.erase(sender)
 		return -1
+	return _persist_report(sender,id,state.data,folder,target)
+
+func _stored_report_matches(path: String, id: String, total: int) -> bool:
+	if not FileAccess.file_exists(path): return false
+	var file := FileAccess.open(path,FileAccess.READ)
+	if file == null or file.get_length() != total: return false
+	var data := file.get_buffer(total)
+	file.close()
+	return data.size() == total and _hash(data) == id
+
+func _persist_report(sender: int, id: String, data: PackedByteArray, folder: String, target: String) -> int:
 	if DirAccess.make_dir_recursive_absolute(folder) != OK: return -1
 	var used := 0
 	for name in DirAccess.get_files_at(folder):
+		# A partial prior write is replaced, rather than counted twice.
+		if name == id+".json": continue
 		var existing := FileAccess.open(folder.path_join(name),FileAccess.READ)
 		if existing: used += existing.get_length()
-	if used+total > INBOX_LIMIT: return -1
+	if used+data.size() > INBOX_LIMIT: return -1
 	var output := FileAccess.open(target,FileAccess.WRITE)
 	if output == null: return -1
-	output.store_buffer(state.data)
+	output.store_buffer(data)
 	output.flush()
 	var ok := output.get_error() == OK
 	output.close()
 	if not ok: return -1
 	incoming.erase(sender)
-	game.network_diagnostics.record("client_report_received",{"peer":sender,"sha256":id,"bytes":total})
-	return total
+	game.network_diagnostics.record("client_report_received",{"peer":sender,"sha256":id,"bytes":data.size()})
+	return data.size()
 
 @rpc("authority","call_remote","unreliable",2)
 func _ack(id: String, next: int, complete: bool) -> void:

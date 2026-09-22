@@ -44,7 +44,12 @@ func run() -> void:
 	main.peer_to_slot = {0: 1}
 	var beams: Array = []
 	remote.beam_event.connect(func(origin, end, _hit): beams.append((end - origin).normalized()))
-	main._receive_action_state(1, main.round_epoch, [false, false, false, true, false], Vector3.FORWARD, ["throw"])
+	# Mirror the complete live button state (jump, crouch, grip, throw, item,
+	# pull, boost) so the protocol validator actually exercises this action.
+	var buttons: Array = main.local_buttons.duplicate()
+	buttons.fill(false)
+	buttons[3] = true
+	main._receive_action_state(1, main.round_epoch, buttons, Vector3.FORWARD, ["throw"])
 	main._receive_remote_input(Vector2.ZERO, Vector3.RIGHT, false, false, false, false, false, 1, main.round_epoch)
 	remote._physics_process(0.016)
 	assert(beams.size() == 1 and beams[0].is_equal_approx(Vector3.FORWARD))

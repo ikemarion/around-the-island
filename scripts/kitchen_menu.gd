@@ -15,6 +15,11 @@ var count_label: Label
 var grid: GridContainer
 var body: BoxContainer
 var aside: VBoxContainer
+var header: BoxContainer
+var table: VBoxContainer
+var scroll: ScrollContainer
+var layout_signature: Array = []
+var focus_reveal_queued := false
 var theme_resource: Theme
 var direct_test: CheckButton
 var skin_buttons: Array[Button] = []
@@ -35,7 +40,8 @@ func build(main: Node, existing: Dictionary) -> void:
 	game.get_node("Lobby/Panel").add_theme_stylebox_override("panel", _style(CREAM, LINE, 16))
 	game.get_node("Lobby/Shade").color = Color("e7e1cb")
 	add_theme_constant_override("separation", 22)
-	var header := HBoxContainer.new()
+	header = BoxContainer.new()
+	header.add_theme_constant_override("separation", 12)
 	add_child(header)
 	var brand := VBoxContainer.new()
 	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -55,10 +61,10 @@ func build(main: Node, existing: Dictionary) -> void:
 	privacy.add_theme_font_size_override("font_size",14)
 	add_child(privacy)
 	_line(self)
-	body = HBoxContainer.new()
+	body = BoxContainer.new()
 	body.add_theme_constant_override("separation", 30)
 	add_child(body)
-	var table := VBoxContainer.new()
+	table = VBoxContainer.new()
 	table.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	table.add_theme_constant_override("separation", 18)
 	body.add_child(table)
@@ -171,6 +177,16 @@ func build(main: Node, existing: Dictionary) -> void:
 	footer_style.content_margin_top = 12
 	footer_style.content_margin_bottom = 12
 	footer.add_theme_stylebox_override("normal", footer_style)
+	# Keep readable, unscaled controls. Short windows scroll, and controller
+	# focus brings off-screen buttons into view automatically.
+	scroll = ScrollContainer.new()
+	scroll.name = "MenuScroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	get_parent().add_child(scroll)
+	reparent(scroll)
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	refresh()
 
 func refresh() -> void:
@@ -220,18 +236,41 @@ func refresh() -> void:
 		seats[slot].character.text = game.CHARACTER_CATALOG.display_name(character_id) if active else ""
 		seats[slot].character.visible = active
 		seats[slot].role.text = ("Not connected" if home or game.session_mode == &"joining" else ("Host" if slot == 0 else "Connected")) if active else "Room for a friend"
-	var width: float = game.get_viewport().get_visible_rect().size.x
-	grid.columns = 4
-	aside.custom_minimum_size.x = 260 if width < 950 else 310
-	var panel: Control = game.get_node("Lobby/Panel")
-	panel.size = Vector2(minf(1110, width - 40), 0)
-	var viewport_size: Vector2 = game.get_viewport().get_visible_rect().size
-	var fit_scale := minf(1.0, minf((viewport_size.x - 32) / panel.size.x, (viewport_size.y - 32) / panel.size.y))
-	panel.scale = Vector2.ONE * fit_scale
-	panel.position = (viewport_size - panel.size * fit_scale) * 0.5
+	_layout_for_viewport()
 	# A controller can navigate immediately, without a preliminary mouse click.
 	if game.lobby.visible and game.can_choose_character() and get_viewport().gui_get_focus_owner() == null:
 		skin_buttons[game.CHARACTER_CATALOG.IDS.find(game.preferred_character)].grab_focus()
+
+func _layout_for_viewport() -> void:
+	var viewport_size: Vector2 = game.get_viewport().get_visible_rect().size
+	var signature := [viewport_size, direct_test.button_pressed, game.session_mode, game.connection_started_ms != 0]
+	if signature != layout_signature:
+		layout_signature = signature
+		if not focus_reveal_queued:
+			focus_reveal_queued = true
+			_reveal_focus_after_layout.call_deferred()
+	var narrow := viewport_size.x < 980
+	header.vertical = narrow
+	body.vertical = narrow
+	body.move_child(aside, 0 if narrow else 1)
+	grid.columns = 2 if viewport_size.x < 620 else 4
+	aside.custom_minimum_size.x = 0 if narrow else 310
+	aside.size_flags_horizontal = Control.SIZE_EXPAND_FILL if narrow else Control.SIZE_FILL
+	var panel: Control = game.get_node("Lobby/Panel")
+	panel.scale = Vector2.ONE
+	var content_height := get_combined_minimum_size().y + 50.0
+	panel.size = Vector2(minf(1110, viewport_size.x - 32), minf(content_height, viewport_size.y - 32))
+	panel.position = (viewport_size - panel.size) * 0.5
+
+func _reveal_focus_after_layout() -> void:
+	# follow_focus handles navigation, but a resize or new direct-address field
+	# can move an already-focused button off-screen without a focus event.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	focus_reveal_queued = false
+	var focused := get_viewport().gui_get_focus_owner()
+	if is_instance_valid(focused) and is_ancestor_of(focused):
+		scroll.ensure_control_visible(focused)
 
 func _take(key: String, destination: Node) -> void:
 	controls[key].reparent(destination)

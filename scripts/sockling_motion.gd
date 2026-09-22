@@ -8,6 +8,7 @@ var stride_phase := 0.0
 var clock := 0.0
 var gait := 0.0
 var speed := 0.0
+var acceleration := 0.0
 var carry := 0.0
 var crouch := 0.0
 var slide := 0.0
@@ -47,6 +48,7 @@ func _init(puppet: Node3D) -> void:
 
 func reset() -> void:
 	initialized = false
+	clock = 0.0
 	was_airborne = false
 	landing = 0.0
 	launch = 0.0
@@ -55,6 +57,7 @@ func reset() -> void:
 	air = 0.0
 	gait = 0.0
 	speed = 0.0
+	acceleration = 0.0
 	turn = 0.0
 	carry = 0.0
 	crouch = 0.0
@@ -67,6 +70,13 @@ func reset() -> void:
 	model.chest.position = Vector3.ZERO
 	model.chest.rotation = Vector3.ZERO
 	model.head.rotation = Vector3.ZERO
+	for eye in model.eyes: eye.scale.y = 1.0
+	if is_instance_valid(model.jaw):
+		model.jaw.rotation = Vector3.ZERO
+		if model.sculpt_body.mesh.get_blend_shape_count() > 0:
+			model.sculpt_body.set_blend_shape_value(0, 0.0)
+	if model.has_method("reset_secondary_motion"):
+		model.reset_secondary_motion()
 	for i in 2:
 		shoulder_springs[i] = Vector2.ZERO
 		elbow_springs[i] = Vector2.ZERO
@@ -91,6 +101,17 @@ func spring(value: Vector2, target: float, frequency: float, dt: float) -> Vecto
 	var decay := exp(-frequency * dt)
 	return Vector2(target + (offset + step) * decay, (value.y - frequency * step) * decay)
 
+static func stride_sample(t: float) -> Vector2:
+	# Rounded velocity/acceleration at the back/front of a step. The old linear
+	# stance reversed abruptly into a cosine swing, while sine toe lift hit the
+	# floor with nonzero vertical speed. This C2 easing and squared lift remove
+	# those corners without changing the stride cadence or the grounded sole.
+	t = fposmod(t, 1.0)
+	var swinging := t >= 0.56
+	var u := (t - 0.56) / 0.44 if swinging else t / 0.56
+	var eased := u * u * u * (u * (u * 6.0 - 15.0) + 10.0)
+	return Vector2(1.0 - 2.0 * eased, pow(sin(u * PI), 2.0)) if swinging else Vector2(-1.0 + 2.0 * eased, 0.0)
+
 func pose_arm(index: int, dt: float, run: float, rise: float, landing_pulse: float) -> void:
 	var side := -1.0 if index == 0 else 1.0
 	# A continuous pendulum rather than copying the foot's stance/swing curve.
@@ -104,7 +125,9 @@ func pose_arm(index: int, dt: float, run: float, rise: float, landing_pulse: flo
 	pitch = lerpf(pitch, -0.10 - rise * 0.27, air)
 	spread = lerpf(spread, side * (0.18 + (1.0 - rise) * 0.08), air)
 	elbow_angle = lerpf(elbow_angle, 0.40 + rise * 0.22, air)
-	pitch += landing_pulse * 0.14
+	# Hands come gently forward to catch the landing, not behind the body.
+	pitch -= landing_pulse * 0.20
+	elbow_angle += landing_pulse * 0.18
 	pitch = lerpf(pitch, 0.24, slide)
 	spread = lerpf(spread, side * 0.22, slide)
 	elbow_angle = lerpf(elbow_angle, 0.32, slide)
@@ -156,7 +179,9 @@ func _step(delta: float, measured_speed: float, holding: bool, airborne: bool, s
 		fall_speed = minf(fall_speed,vertical_speed)
 	landing = maxf(landing-dt,0.0)
 	launch = maxf(launch-dt,0.0)
+	var previous_speed := speed
 	speed = lerpf(speed,clampf(measured_speed,0,22),1.0-exp(-10.0*dt))
+	acceleration = lerpf(acceleration, clampf((speed - previous_speed) / maxf(dt, 0.0001), -9.0, 9.0), 1.0 - exp(-9.0 * dt))
 	gait = lerpf(gait,clampf(speed/1.4,0,1) if not airborne and not stunned and not sliding else 0.0,blend)
 	carry = lerpf(carry,float(holding),blend)
 	crouch = lerpf(crouch,float(crouched),blend)
@@ -182,7 +207,8 @@ func _step(delta: float, measured_speed: float, holding: bool, airborne: bool, s
 	model.position.y = SOLE_Y*(1.0-scale_y)
 	var breath := sin(clock*2.4)*0.006*(1.0-gait)
 	model.chest.position = Vector3(sin(stride_phase)*0.010*gait,breath+(0.5-0.5*cos(stride_phase*2.0))*0.025*gait,0)
-	var lean := run*0.13*gait+landing_pulse*0.12-slide*0.22+crouch*0.055
+	var balance := acceleration * 0.006 * (1.0 - air) * (1.0 - slide)
+	var lean := run*0.13*gait+landing_pulse*0.12-slide*0.22+crouch*0.055+balance
 	var wobble := sin(clock*12.0)*0.055*stun
 	# A little characterful slouch, with opposing shoulder rotation in motion.
 	model.chest.rotation = model.chest.rotation.lerp(Vector3(lean+0.025,-turn*0.018+sin(stride_phase-0.15)*0.045*gait,-0.065*(1.0-gait*0.55)+sin(stride_phase)*0.030*gait-turn*0.020+wobble),blend)
@@ -190,11 +216,10 @@ func _step(delta: float, measured_speed: float, holding: bool, airborne: bool, s
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var t := fposmod(stride_phase/TAU+i*0.5,1.0)
-		var swing_t := clampf((t-0.56)/0.44,0,1)
-		var stride := lerpf(-1,1,t/0.56) if t < 0.56 else cos(swing_t*PI)
-		var lift := sin(swing_t*PI)*(0.07+run*0.065)*gait
-		var leg_pitch := stride*lerpf(0.38,0.72,run)*gait
-		var knee := (0.08+sin(swing_t*PI)*0.55)*gait+crouch*0.18
+		var step := stride_sample(t)
+		var lift := step.y*(0.07+run*0.065)*gait
+		var leg_pitch := step.x*lerpf(0.38,0.72,run)*gait
+		var knee := (0.08+step.y*0.55)*gait+crouch*0.18
 		var rise := clampf(vertical_speed/7.0,0,1)
 		leg_pitch = lerpf(leg_pitch,-0.30*rise+side*0.12,air)
 		knee = lerpf(knee,0.22+rise*0.6+float(i)*0.08,air)

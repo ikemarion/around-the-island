@@ -26,6 +26,9 @@ var action_jump := false
 var action_throw := false
 var action_quick := false
 var prediction_history: Dictionary = {}
+var last_authoritative_ack := -1
+var last_authoritative_ack_ms := 0
+const REPEATED_ACK_GRACE_MS := 500
 var camera_correction := Vector3.ZERO
 var replica_target := Vector3.ZERO
 var replica_target_ready := false
@@ -353,6 +356,9 @@ func try_pickup_item(item_type: StringName) -> bool:
 
 func apply_stun(duration: float) -> void:
 	stun_time_remaining = maxf(stun_time_remaining, duration)
+	motion_epoch += 1
+	slide_time_remaining = 0.0
+	slide_direction = Vector2.ZERO
 	velocity.x *= 0.2
 	velocity.z *= 0.2
 	_release_chair()
@@ -360,6 +366,7 @@ func apply_stun(duration: float) -> void:
 
 
 func apply_knockback(impulse: Vector3) -> void:
+	motion_epoch += 1
 	velocity += impulse
 
 
@@ -399,6 +406,8 @@ func reset_movement_state() -> void:
 	action_throw = false
 	action_quick = false
 	prediction_history.clear()
+	last_authoritative_ack = -1
+	last_authoritative_ack_ms = 0
 	camera_correction = Vector3.ZERO
 	replica_target_ready = false
 	remote_held_name = ""
@@ -461,6 +470,7 @@ func receive_token_escape(from_position: Vector3) -> void:
 	away.y = 0.0
 	if away.length_squared() < 0.01:
 		away = Vector3.RIGHT
+	motion_epoch += 1
 	velocity += away.normalized() * 3.2
 
 
@@ -506,6 +516,10 @@ func _physics_process(delta: float) -> void:
 		_refresh_character_visuals()
 	ai_jump_cooldown_remaining = maxf(0.0, ai_jump_cooldown_remaining - delta)
 	var is_stunned := stun_time_remaining > 0.0
+	if is_stunned:
+		# Snapshot-applied stuns must also stop a guest's predicted slide.
+		slide_time_remaining = 0.0
+		slide_direction = Vector2.ZERO
 	var previous_item_cooldown := quick_item_cooldown_remaining
 	quick_item_cooldown_remaining = maxf(0.0, quick_item_cooldown_remaining - delta)
 	if previous_item_cooldown > 0.0 and quick_item_cooldown_remaining <= 0.0:
@@ -664,12 +678,25 @@ func apply_authoritative_motion(state: Dictionary) -> void:
 	motion_epoch = epoch
 	if client_predicted:
 		var ack := int(state.get("ack", 0))
+		var now := Time.get_ticks_msec()
+		if not changed:
+			if ack < last_authoritative_ack:
+				return
+			# A host may simulate several frames without receiving a new input.
+			# That repeated ACK has already been reconciled and removed from the
+			# history: treating it as missing history would rewind local motion.
+			# Bound prediction during a stalled uplink; epoch changes (including
+			# stun/knockback) bypass this grace period immediately.
+			if ack == last_authoritative_ack and now - last_authoritative_ack_ms < REPEATED_ACK_GRACE_MS:
+				return
+		last_authoritative_ack = ack
+		last_authoritative_ack_ms = now
 		if changed:
 			global_position = state.position
 			velocity = state.velocity
 			prediction_history.clear()
 			camera_correction = Vector3.ZERO
-			slide_time_remaining = 0.0
+			_restore_authoritative_slide(state)
 		elif prediction_history.has(ack):
 			var error: Vector3 = state.position - prediction_history[ack].position
 			var velocity_error: Vector3 = state.velocity - prediction_history[ack].velocity
@@ -684,13 +711,13 @@ func apply_authoritative_motion(state: Dictionary) -> void:
 			else:
 				camera_correction = Vector3.ZERO
 		else:
-			# The server may repeat an ack or outlive our bounded history during loss.
-			# Rebase at its known-safe position instead of ignoring the correction.
+			# A newer ACK outside our bounded history, or a stalled uplink beyond
+			# the grace period, must still rebase to an authoritative position.
 			global_position = state.position
 			velocity = state.velocity
 			prediction_history.clear()
 			camera_correction = Vector3.ZERO
-			slide_time_remaining = 0.0
+			_restore_authoritative_slide(state)
 		for sequence in prediction_history.keys():
 			if sequence <= ack:
 				prediction_history.erase(sequence)
@@ -698,6 +725,22 @@ func apply_authoritative_motion(state: Dictionary) -> void:
 		velocity = state.velocity
 		if changed or global_position.distance_to(replica_target) > 3.0:
 			global_position = replica_target
+
+
+func _restore_authoritative_slide(state: Dictionary) -> void:
+	# Motion epochs also identify impulses, which do not necessarily end the
+	# host's slide. Rebase the whole motion state instead of cancelling only the
+	# guest's slide. Older snapshots intentionally default to no active slide.
+	var remaining := float(state.get("slide_time", 0.0))
+	var direction: Vector2 = state.get("slide_direction", Vector2.ZERO)
+	if not is_finite(remaining) or not direction.is_finite() or float(state.get("stun", 0.0)) > 0.0:
+		remaining = 0.0
+	if remaining <= 0.0 or direction.length_squared() < 0.001:
+		slide_time_remaining = 0.0
+		slide_direction = Vector2.ZERO
+		return
+	slide_time_remaining = clampf(remaining, 0.0, slide_duration)
+	slide_direction = direction.normalized()
 
 
 func _update_client_highlight() -> void:

@@ -34,7 +34,7 @@ func sample_transport() -> void:
 		var peer: ENetPacketPeer = enet.get_peer(id)
 		if peer == null or not peer.is_active():
 			continue
-		snapshot[id] = {"state":peer.get_state(),"channels":peer.get_channels(),"reliable_rtt_ms":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME),"reliable_rtt_variance":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME_VARIANCE),"reliable_loss_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS)/ENetPacketPeer.PACKET_LOSS_SCALE,"loss_epoch_ms":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS_EPOCH),"throttle_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_THROTTLE)/ENetPacketPeer.PACKET_THROTTLE_SCALE}
+		snapshot[id] = {"state":peer.get_state(),"channels":peer.get_channels(),"reliable_rtt_ms":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME),"reliable_rtt_variance":peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME_VARIANCE),"reliable_loss_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS)/ENetPacketPeer.PACKET_LOSS_SCALE,"loss_epoch_ms":peer.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS_EPOCH),"throttle_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_THROTTLE)/ENetPacketPeer.PACKET_THROTTLE_SCALE,"throttle_limit_ratio":peer.get_statistic(ENetPacketPeer.PEER_PACKET_THROTTLE_LIMIT)/ENetPacketPeer.PACKET_THROTTLE_SCALE}
 	if not snapshot.is_empty():
 		transport_last = snapshot
 		record("transport",{"transport":snapshot,"snapshot_silence_ms":Time.get_ticks_msec()-last_snapshot_ms if last_snapshot_ms > 0 else -1})
@@ -42,7 +42,8 @@ func sample_transport() -> void:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if "--diagnostics-workspace" in OS.get_cmdline_user_args():
-		directory = "res://build/network-test/diagnostics"
+		# PCK res:// is read-only; test builds need a physical directory too.
+		directory = ProjectSettings.globalize_path("res://build/network-test/diagnostics")
 	DirAccess.make_dir_recursive_absolute(directory)
 	var path := directory + "/session-%d-%d.jsonl" % [int(Time.get_unix_time_from_system()),OS.get_process_id()]
 	log_file = FileAccess.open(path,FileAccess.WRITE)
@@ -124,8 +125,10 @@ func _process(delta: float) -> void:
 
 @rpc("any_peer","call_remote","unreliable",2)
 func _probe(id: int) -> void:
-	if game.session_mode == &"host":
+	if multiplayer.is_server() and game.session_mode in [&"hosting", &"host"]:
 		var peer := multiplayer.get_remote_sender_id()
+		if not game.peer_to_slot.has(peer):
+			return
 		var stats: Dictionary = peer_stats.get(peer,{"probes_received":0})
 		stats.probes_received += 1
 		stats.last_probe_unix_ms = int(Time.get_unix_time_from_system()*1000)

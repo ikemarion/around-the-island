@@ -1,58 +1,52 @@
-# Network reliability pass — v0.35
+# Connection diagnostics — current playbook
 
-## v0.42 direct route test preparation
+Use **v0.61 on the host and all guests** (protocol 17). Normal Join uses the configured Playit endpoint; Direct connection test bypasses it. See [ONLINE-PLAY.md](ONLINE-PLAY.md) for setup. No public connectivity test or automatic router/firewall change is implied by the host's local-listening confirmation.
 
-Lobby direct-connect toggle exposes a numeric IP:port input; normal Join remains the configured Playit endpoint. Router discovery returned no devices/usable UPnP gateway on the host PC. No mappings, firewall rules or live tunnel changes were made. Remote bypass test remains pending a direct public route; localhost validation alone cannot establish Playit as the cause.
+## Collecting reports
 
-Reports now sort newest-first to prioritize the latest failures rather than older history. Direct-route join and report order are exercised by the two-instance report-transfer test.
+Open **Connection reports** from the lobby or session menu. The folder is normally:
 
-## v0.41 automatic historical report collection
+`%APPDATA%\Godot\app_userdata\Around the Island\network-logs`
 
-Previously unsent ATI-*.json files from the local reports folder upload after successful slot assignment. The host saves content-addressed JSON in network-logs/received, with receipt events mapping peer IDs to hashes. Successful disk write is acknowledged before a client writes its sent marker. Unacknowledged reports remain local and retry on the next join. Reports received from others are never re-uploaded.
+- `reports` contains this computer's automatically saved ATI JSON reports.
+- `received` contains reports uploaded by admitted guests.
+- Session JSONL files contain timestamped events and periodic samples.
 
-Wire protocol 12 is required. Transfer uses stop-and-wait 800-byte unreliable datagrams with application acknowledgements, every 250 ms; no additional reliable-packet backlog. Limits: 256 KiB/report, 2 MiB incoming chunks/peer/connection, 50 MiB total inbox. The host checks admission, digest syntax, offsets, content hash and basic JSON structure; clients cannot supply filesystem paths. Oversized reports and full inboxes are not silently deleted.
+Disconnects and session exits save reports. On a later successful join, guests automatically send previously unsent ATI reports, newest first. No unrelated files, GitHub uploads or third-party report storage are involved. The lobby explains this sharing before joining.
 
-Two-instance test passed: automatic upload, host JSON persistence, acknowledgement markers and duplicate skip on another begin. Invalid path-like digest rejected. This does not validate Internet reliability.
+A friend's final disconnect report normally arrives **when they reconnect**, not after the broken connection is already gone. Reports remain local until a verified save is acknowledged. v0.61 fixes the retry case that could incorrectly mark a failed host save as delivered.
 
-The older sections below describe prior builds; v0.41 does upload ATI reports to the configured game host, not to a third-party service.
+Transfers are bounded: 800-byte chunks, at most four chunks/second per guest, 256 KiB per report, 2 MiB received per connection, 50 MiB host inbox. Interrupted transfers retry; oversized reports remain local. Archive the host inbox manually when full. Do not delete unsent reports just to silence a warning.
 
-## v0.40 transport inspection
+## Next remote playtest
 
-Validation: localhost host plus three clients completed 180 seconds and three host rounds; final client application RTT was 7/7/8 ms. Rejoin/remote-item lifecycle and packaged diagnostic export tests passed. The host logged a channel-0 send warning at test teardown; this is not a reproduction of the mid-match remote drop and remains a cleanup issue to investigate. No public-tunnel A/B test has been completed.
+1. Everyone uses the same build. Host keeps ATI and Playit running; prefer Ethernet when available.
+2. Wait in the lobby for at least ten seconds. Guests should obtain an RTT reading without accumulating unanswered probes solely from waiting.
+3. Play several rounds. If someone drops, note the approximate time, whether everyone dropped together, and whether the host froze.
+4. Have guests reconnect so their saved reports can upload. Collect host reports and received guest reports covering the same timestamps; preserve nearby Playit logs if available.
+5. Compare against a same-build direct LAN session. A direct Internet comparison additionally requires a reachable public IPv4 address and UDP forwarding; the game does not set these up.
 
-- Samples direct ENet peers once per second: connection state, channel count, reliable RTT/variance, reliable loss estimate and throttle ratio. Client relayed peers are intentionally excluded.
-- Records elapsed time since the last accepted snapshot, including when no further snapshots arrive. Reports preserve the last transport sample plus recent history. ENet pending reliable queue contents and exact timeout reasons are not exposed by this API; these metrics do not conclusively identify the cause of a disconnect.
-- Teardown requests and version rejection disconnects are logged. Handshake timeout disconnects already had explicit events. Generic disconnect wording now states connection loss without blaming the host.
-- No timeout tuning, new RPCs, protocol changes or automatic uploads.
-- Existing Playit service logs found at `C:\ProgramData\playit_gg\logs\playitd.log`. Entries read included UDP reset warnings at 22:45 UTC, but none matching the 23:03 UTC v0.39 disconnect; this does not rule out a tunnel issue. File size/mtime can be stale while a process has the file open; read contents.
+## Interpreting the evidence
 
-## v0.39 automatic reports
+- Application RTT is measured by each guest. An absent host RTT is normal.
+- Unanswered probes are **not** a packet-loss percentage. Requests, replies or scheduling can be delayed. v0.61 answers admitted peers while waiting in the lobby, removing one source of false misses.
+- Snapshot silence records how long authoritative updates have stopped arriving.
+- ENet samples include reliable RTT/variance, loss estimates, connection state and throttle ratio. They do not expose the exact reason for every timeout or the pending reliable queue.
+- Maximum frame duration helps distinguish a stalled game process from a transport problem. Compare both sides and the same timestamps before blaming the host, ISP or tunnel.
+- Estimated obstacle payload bytes exclude protocol overhead and do not represent total wire bandwidth.
 
-Disconnect signals save a JSON report under `network-logs/reports`. Session exits also save a report before state resets, including intentional exits. These are observations, not a determination of why a connection ended. Connection reports buttons in the lobby and game menu save a current report and open the folder. Nothing is uploaded automatically.
+If all guests lose snapshots while the host remains responsive, compare tunnel and host-network events. If the host also stalls, investigate game frame time. If only one guest drops, inspect that guest's path as well.
 
-Reports include up to 240 recent events, local RTT/probe state and per-peer last-probe timestamps/counts on the host. Host probe counts are not latency or packet-loss measurements. Collect both the host and friend's reports; the host cannot recover a friend's crash log remotely.
+## Validation and limits
 
-All participants must update: protocol 11 adds bounded obstacle batches.
+### Engine bandwidth issue found during this pass
 
-## Changes
+The installed Godot 4.7.2 build (`ed1daf0bf`) passes the requested channel count plus two into the server's incoming-bandwidth argument. ATI requests three channels, producing a five-byte/second cap instead of the intended unlimited default. This is visible in the [server creation call](https://raw.githubusercontent.com/godotengine/godot/ed1daf0bf/modules/enet/enet_multiplayer_peer.cpp) and [connection method signature](https://raw.githubusercontent.com/godotengine/godot/ed1daf0bf/modules/enet/enet_connection.h).
 
-- Skip identical obstacle states between refreshes; repeat all props every 20 snapshots (about one second). This repairs missed final movement updates and supplies late joiners with state.
-- Batch prop updates up to 900 serialized payload bytes per batch. RPC/transport headers are additional. Player and match updates remain separate to avoid creating large fragmented snapshots.
-- Keep existing per-object sequence/epoch guards when unpacking batches.
-- Record timestamped connection events, application round-trip time, probes unanswered for five seconds, maximum frame duration, accepted snapshot counts/gaps, and estimated prop traffic.
-- No provider migration, timeout inflation, automatic reconnect, or claim that Internet disconnects are fixed.
+A controlled local transport comparison delivered 400 of 471 packets with that setup and reached a throttle/limit of 1/32. Explicitly restoring unlimited bandwidth delivered 471 of 471, with both remaining at 32/32. The game now calls `bandwidth_limit(0, 0)` immediately after server creation, before admitting peers. The client's argument forwarding was inspected separately; it does not have this mismatch. Game-level input/report rate limits remain unchanged.
 
-## Collect evidence during the next remote playtest
+Reports now include `throttle_limit_ratio` alongside `throttle_ratio`, distinguishing a bandwidth-imposed ceiling from the current sending rate. These local results identify a concrete problem, but do not prove it caused every historical disconnect or establish that the Playit route is healthy.
 
-Local validation: one host and three clients completed 180 seconds and three host round starts without unexpected disconnections. Final client application RTT samples were 6–8 ms. Quiet five-second windows recorded 15 prop batch broadcasts versus the previous 1,200 individual prop broadcasts (12 props × 20 Hz × 5 s); this is not a measurement of total wire bandwidth. The test is primarily an idle/round-transition soak, supplemented by separate item-action/rejoin tests, not a WAN or packet-loss stress test.
+The audit reproduced repeated-ack prediction resets, missing guest throw feedback, a report-persistence acknowledgement bug and misleading waiting-room probes. Targeted regressions accompany their fixes. The pre-fix local host-plus-three-guests run lasted 180 seconds across three host round starts without a disconnect; this is a localhost lifecycle check, **not proof of WAN reliability**. Release verification records the post-fix results separately.
 
-Also passed: multiplayer regression, two join/disconnect cycles with remote item activation, obstacle interaction, map smoke tests, chaos effects, and synthetic stale/lost prop-state recovery. The exported build passed the prop-batch regression.
-
-1. Everyone runs v0.35. Host keeps the game and Playit running, ideally using Ethernet.
-2. Play until the failure occurs; note whether the host game also freezes and the approximate time. Save the Playit console/log around that time.
-3. Collect each player's newest file under `%APPDATA%\Godot\app_userdata\Around the Island\network-logs`.
-4. Compare with a direct LAN run of the same build. The automated soak uses localhost, not the public tunnel, so it cannot validate ISP or Playit stability.
-
-Log files contain peer IDs and timestamps, not credentials. Probe misses are not an ENet packet-loss percentage: they may include lost requests/replies, scheduling delays, or session transitions. Prop payload counters exclude protocol overhead and are counted once per broadcast, not multiplied by recipients. An absent RTT on the host is normal; each client measures its path to the host. Flushes occur every five seconds and on connection events.
-
-If snapshots stop for all clients while host frames remain healthy, compare tunnel events and home-network connectivity. If host frame time spikes, investigate the game process. If only one client drops, inspect that client's path before changing the server.
+No provider migration, timeout inflation, automatic reconnection or public-server restart is part of this maintenance pass. Historical investigations are preserved in [the archive](docs/history/NETWORK-through-v060.md), including older behavior that no longer describes the current build.

@@ -1,6 +1,22 @@
 extends SceneTree
 ## Real ENet peers: handshake choice, lobby changes, match lock, and mixed decoys.
 ## Localhost only; this fixture does not establish Internet reliability.
+
+class FixtureHandshake extends Node:
+	var rejoin_peer := 0
+	var may_leave := false
+
+	@rpc("any_peer", "call_remote", "reliable")
+	func confirm_rejoin() -> void:
+		var game = get_tree().current_scene
+		var sender := multiplayer.get_remote_sender_id()
+		if multiplayer.is_server() and game.peer_to_slot.has(sender):
+			rejoin_peer = sender
+
+	@rpc("authority", "call_remote", "reliable")
+	func acknowledge_rejoin() -> void:
+		may_leave = true
+
 func _initialize() -> void:
 	call_deferred("run")
 	create_timer(35.0).timeout.connect(func():
@@ -11,6 +27,9 @@ func run() -> void:
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	current_scene = game
+	var handshake := FixtureHandshake.new()
+	handshake.name = "CharacterFixtureHandshake"
+	root.add_child(handshake)
 	game._enter_lobby()
 	game.choose_character(&"looper")
 	var host := "--character-host" in OS.get_cmdline_user_args()
@@ -46,13 +65,15 @@ func run() -> void:
 		for decoy in decoys: decoy._physics_process(4.1)
 		await process_frame
 		game._broadcast_snapshot(true)
-		while game.active_slots.count(true) > 1:
-			await create_timer(0.02, true).timeout
 		# Same client rejoins the already running game with a different preference.
-		while game.active_slots.count(true) < 2:
+		# A fast client can join and leave between these fixture polls. Keep the
+		# rejoined client connected until the host explicitly checks its new skin.
+		while handshake.rejoin_peer == 0:
 			await create_timer(0.02, true).timeout
+		assert(game.peer_to_slot.has(handshake.rejoin_peer), "Rejoined client left before host verification")
 		assert(game.players[1].character_id == &"sockling", "Late-join choice retained the previous occupant's Looper")
 		game._broadcast_snapshot(true)
+		handshake.acknowledge_rejoin.rpc_id(handshake.rejoin_peer)
 		while game.active_slots.count(true) > 1:
 			await create_timer(0.02, true).timeout
 		print("CHARACTER_NETWORK host PASS: initial choice, lobby RPCs, mixed decoys, disconnect and late rejoin with a new skin")
@@ -101,10 +122,14 @@ func run() -> void:
 		assert(game.local_slot == 1 and game.players[1].character_id == &"sockling")
 		assert(game.players[1].character_model().name == "Sockling")
 		assert(game.players[0].character_id == &"sockling")
+		handshake.confirm_rejoin.rpc_id(1)
+		while not handshake.may_leave:
+			await create_timer(0.02, true).timeout
 		print("CHARACTER_NETWORK client PASS: lobby changes, mixed snapshots/decoys, match lock, preference restoration, late rejoin with another character")
 	game._prepare_session()
 	for player in game.players:
 		for audio_player in player.sfx_players: audio_player.stop()
 	game.queue_free()
+	handshake.queue_free()
 	await process_frame
 	quit()

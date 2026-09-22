@@ -71,10 +71,12 @@ func _ready() -> void:
 	blink_offset = 1.0+float(actor.player_index)*0.71 if is_instance_valid(actor) else 1.0
 	if is_instance_valid(actor): last_position = actor.global_position
 
+func reset_secondary_motion() -> void:
+	loop_spring = Vector2.ZERO
+	loop_pivot.rotation = Vector3.ZERO
+
 func animate(delta: float, speed: float, holding: bool, airborne: bool, stunned: bool, vertical_speed := 0.0, crouched := false, sliding := false, turn_rate := 0.0) -> void:
-	if not motion.initialized:
-		loop_spring = Vector2.ZERO
-		loop_pivot.rotation = Vector3.ZERO
+	if not motion.initialized: reset_secondary_motion()
 	super.animate(delta,speed,holding,airborne,stunned,vertical_speed,crouched,sliding,turn_rate)
 	# Keep the closed smirk readable, and give the soft loop a restrained lag.
 	var target: float = sin(phase-0.3)*0.045*gait-clampf(turn_rate,-4,4)*0.02

@@ -2,3 +2,6 @@
 build/
 *.tmp
 *.log
+# Existing tracked releases stay available; future binaries belong in Releases.
+/releases/*.zip
+/releases/*.zip.sha256

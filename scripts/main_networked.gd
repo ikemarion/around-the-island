@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 17
-const BUILD_VERSION := "0.60"
+const BUILD_VERSION := "0.61"
 const CHARACTER_CATALOG := preload("res://scripts/character_catalog.gd")
 var preferred_character: StringName = &"sockling"
 var bot_skin_rng := RandomNumberGenerator.new()
@@ -226,8 +226,18 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE and session_mode in [&"solo", &"host", &"client"] and not waiting_for_start:
-		_set_session_menu(not session_menu.visible)
+	if session_mode not in [&"solo", &"host", &"client"] or waiting_for_start:
+		return
+	var toggle: bool = event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_ESCAPE
+	var dismiss := false
+	if event is InputEventJoypadButton and event.pressed:
+		var assigned_pad: int = players[local_slot].joypad_id
+		if assigned_pad >= 0 and event.device != assigned_pad:
+			return
+		toggle = event.button_index == JOY_BUTTON_START
+		dismiss = event.button_index == JOY_BUTTON_B and session_menu.visible
+	if toggle or dismiss:
+		_set_session_menu(false if dismiss else not session_menu.visible)
 		get_viewport().set_input_as_handled()
 
 
@@ -239,54 +249,15 @@ func _set_session_menu(opened: bool) -> void:
 		players[local_slot]._release_chair()
 		session_menu.get_node("Panel/Box/Leave").text = "Close room for everyone" if session_mode == &"host" else "Leave to main menu"
 		session_menu.get_node("Panel/Box/Resume").grab_focus()
+	else:
+		get_viewport().gui_release_focus()
 
 
 func _setup_session_menu(menu_theme: Theme) -> void:
-	session_menu = CanvasLayer.new()
+	session_menu = preload("res://scripts/match_menu.gd").new()
 	session_menu.name = "SessionMenu"
-	session_menu.layer = 12
-	session_menu.visible = false
 	add_child(session_menu)
-	var shade := ColorRect.new()
-	shade.color = Color(0.02, 0.04, 0.06, 0.85)
-	session_menu.add_child(shade)
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var panel := PanelContainer.new()
-	panel.name = "Panel"
-	panel.theme = menu_theme
-	var panel_style: StyleBoxFlat = $Lobby/Panel.get_theme_stylebox("panel").duplicate()
-	panel_style.content_margin_left = 20
-	panel_style.content_margin_right = 20
-	panel_style.content_margin_top = 20
-	panel_style.content_margin_bottom = 20
-	panel.add_theme_stylebox_override("panel", panel_style)
-	session_menu.add_child(panel)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.offset_left = -220
-	panel.offset_right = 220
-	panel.offset_top = -110
-	panel.offset_bottom = 110
-	var box := VBoxContainer.new()
-	box.name = "Box"
-	box.add_theme_constant_override("separation", 10)
-	panel.add_child(box)
-	var label := Label.new()
-	label.text = "GAME MENU\nThe match keeps running."
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(label)
-	var resume := Button.new()
-	resume.name = "Resume"
-	resume.text = "Resume"
-	box.add_child(resume)
-	resume.pressed.connect(func(): _set_session_menu(false))
-	var diagnostics_button := Button.new()
-	diagnostics_button.text = "Connection reports"
-	box.add_child(diagnostics_button)
-	diagnostics_button.pressed.connect(network_diagnostics.open_reports)
-	var leave := Button.new()
-	leave.name = "Leave"
-	box.add_child(leave)
-	leave.pressed.connect(func(): _enter_lobby("You left the room. Choose how to play."))
+	session_menu.build(self, menu_theme)
 
 
 func _on_kill_box_body_entered(body: Node3D) -> void:
@@ -618,7 +589,7 @@ func _send_local_input() -> void:
 			edges.append(entry[1])
 	local_input_sequence += 1
 	player.input_sequence = local_input_sequence
-	player.set_network_input(Vector2(world.x, world.z), aim, false, buttons[1], buttons[2], false, false)
+	player.set_network_input(Vector2(world.x, world.z), aim, false, buttons[1], buttons[2], buttons[3], false)
 	for edge in edges:
 		player.action_queue.append({"kind": StringName(edge), "aim": aim})
 	if buttons != local_buttons or Time.get_ticks_msec() - last_input_send > 250:
@@ -742,7 +713,7 @@ func _update_world_scoreboard() -> void:
 
 func _player_state(slot: int) -> Dictionary:
 	var p := players[slot]
-	return {"active": active_slots[slot], "character": p.character_id, "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time, "double_speed": p.double_speed_time}
+	return {"active": active_slots[slot], "character": p.character_id, "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "slide_time": p.slide_time_remaining, "slide_direction": p.slide_direction, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time, "double_speed": p.double_speed_time}
 
 
 func _broadcast_snapshot(reliable_state := false) -> void:
