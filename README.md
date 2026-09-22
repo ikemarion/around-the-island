@@ -4,7 +4,9 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-The current local package is [ATI v0.58 for Windows](releases/ATI-v0.58-Windows.zip). Extract it and run the included ATI executable. GitHub upload remains paused; the [v0.58 GitHub download](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.58-Windows.zip) will become available after this update is published. **All players need v0.58 (protocol 17).** New: choose **Looper** or **Sockling** from **Your character** in the lobby before the match starts. Loopers have a soft purple velvet body, an open plush head loop, sleepy sideways eyes, a small smirk, rounded mittens and cream ankle cuffs. Both characters play identically. Choices are saved locally and replicated to other players; Decoy Double copies either character and its color. [Reference comparison, actual Godot views and animation](docs/art/loopers/v058/README.md).
+The current local package is [ATI v0.59 for Windows](releases/ATI-v0.59-Windows.zip). Extract it and run the included ATI executable. GitHub upload remains paused; the [v0.59 GitHub download](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.59-Windows.zip) will become available after this update is published. **Use v0.59 on everyone's PC for matching visuals; protocol 17 is unchanged.** Loopers now have a matte sculpted-clay surface with subtle hand-worked relief instead of fuzzy velvet, a broader rounded head, softer sleepy eye openings and fuller mitten hands. [Actual Godot comparison, close-up and animation](docs/art/loopers/v059/README.md).
+
+Choose **Looper** or **Sockling** from **Your character** in the lobby before the match starts. Both characters play identically. Choices are saved locally and replicated to other players; Decoy Double copies either character and its color. Sockling's fleece appearance is unchanged.
 
 Decoy Double still gives its user four seconds of invisibility with visible footsteps; the copy remains visible and animates independently. The pickup icon and ability rules are unchanged.
 

@@ -1,6 +1,6 @@
 extends "res://scripts/sockling_art.gd"
-## Same cosmetic movement/visibility contract, a distinct closed-mouth plush
-## sculpt and fine velvet material. No player simulation lives in this model.
+## Same cosmetic movement/visibility contract, a distinct closed-mouth rounded
+## sculpt and hand-worked matte clay surface. No player simulation lives here.
 const LOOPER_SCULPT := preload("res://art/characters/looper/looper-sculpt.glb")
 var top_loop: MeshInstance3D
 var loop_pivot: Node3D
@@ -12,7 +12,7 @@ func _init() -> void:
 
 func cloth(color: Color) -> ShaderMaterial:
 	var mat := ShaderMaterial.new()
-	mat.shader = preload("res://scripts/looper_velvet.gdshader")
+	mat.shader = preload("res://scripts/looper_clay.gdshader")
 	mat.set_shader_parameter("fleece_color",color)
 	return mat
 
@@ -34,8 +34,6 @@ func looper_part(parent: Node3D, source: Node3D, title: String) -> MeshInstance3
 			part.set_surface_override_material(surface,ART.material(Color("28252c"),0.85))
 		else:
 			part.set_surface_override_material(surface,fleece)
-	if title in ["Body","TopLoop","LeftArm","RightArm"]:
-		preload("res://scripts/looper_nap.gd").attach(part,title,fleece)
 	return part
 
 func _ready() -> void:

@@ -109,7 +109,7 @@ func build(main: Node, existing: Dictionary) -> void:
 	character_choice.name = "CharacterChoice"
 	character_choice.custom_minimum_size.y = 44
 	character_choice.add_item("Sockling · knitted mischief")
-	character_choice.add_item("Looper · soft velvet loops")
+	character_choice.add_item("Looper · clay daydreamer")
 	aside.add_child(character_choice)
 	character_choice.item_selected.connect(func(index: int):
 		game.choose_character(game.CHARACTER_CATALOG.IDS[index]))

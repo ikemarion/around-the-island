@@ -10,7 +10,7 @@ const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
 const PROTOCOL_VERSION := 17
-const BUILD_VERSION := "0.58"
+const BUILD_VERSION := "0.59"
 const CHARACTER_CATALOG := preload("res://scripts/character_catalog.gd")
 var preferred_character: StringName = &"sockling"
 var network_diagnostics: Node

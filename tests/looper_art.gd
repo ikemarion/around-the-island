@@ -61,6 +61,7 @@ func run() -> void:
 		assert(not materials.has(art.fleece), "Player skin materials are shared mutable state")
 		materials.append(art.fleece)
 		assert(art.skin_materials.size() >= 2)
+		check_clay_surface(art)
 		assert(art.eyes.size() == 2 and art.arm_skeletons.size() == 2 and art.leg_meshes.size() == 2)
 		for limb in art.arm_meshes:
 			assert(limb.skin != null and limb.skin.get_bind_count() == 3, "Looper arms need elbow and wrist skinning")
@@ -111,20 +112,21 @@ func run() -> void:
 	game.queue_free()
 	await process_frame
 	done = true
-	print("LOOPER_ART PASS: 4 selectable palettes; retained Sockling; real open loop; sleepy eyes/smile/cream ankles; finite geometry ", geometry_counts, "; shared arm/fibre caches across clones and skin switches; GPU arms; KneeFlex legs; walk/run/carry/jump/crouch/slide/stun; hiding and replica resets; unchanged physics")
+	print("LOOPER_ART PASS: 4 selectable palettes; retained Sockling; real open loop; sleepy eyes/smile/cream ankles; purple and cream clay shaders without fleece fibres; finite geometry ", geometry_counts, "; shared arm geometry across clones and skin switches; GPU arms; KneeFlex legs; walk/run/carry/jump/crouch/slide/stun; hiding and replica resets; unchanged physics")
 	quit()
+
+func check_clay_surface(model: Node3D) -> void:
+	var clay: Shader = load("res://scripts/looper_clay.gdshader")
+	assert(clay != null and model.fleece.shader == clay and model.cream_material.shader == clay, "Purple body and cream ankles must use the Looper clay surface")
+	assert(model.skin_materials.has(model.fleece) and model.skin_materials.has(model.cream_material), "Both clay colors need the existing stun material contract")
+	assert(model.find_children("*CloseUpVelvet*", "", true, false).is_empty(), "Looper retained a velvet fibre layer")
+	assert(model.find_children("*", "MultiMeshInstance3D", true, false).is_empty(), "Clay Looper still has instanced fabric fibres")
 
 func check_shared_caches() -> void:
 	var original: Node3D = game.players[0].character_model()
 	var meshes := [original.arm_meshes[0].mesh, original.arm_meshes[1].mesh]
-	var fibres := {}
-	for nap in original.find_children("*", "MultiMeshInstance3D", true, false):
-		fibres[original.get_path_to(nap)] = nap.multimesh
-	assert(not fibres.is_empty(), "Looper has no close-up velvet fibres")
 	var rig = load("res://scripts/sockling_arm_rig.gd")
-	var nap_cache = load("res://scripts/looper_nap.gd")
 	var weighted_before: int = rig.weighted_meshes.size()
-	var fibres_before: int = nap_cache.fields.size()
 	var comparisons: Array = []
 	for player in game.players: comparisons.append(player.character_model())
 	# Standalone models exercise the exact catalog path used by Decoy Double.
@@ -135,12 +137,11 @@ func check_shared_caches() -> void:
 		clone.hide()
 		comparisons.append(clone)
 	for model in comparisons:
+		check_clay_surface(model)
 		for index in 2:
 			assert(model.arm_meshes[index].mesh == meshes[index], "Looper reloaded a source arm instead of reusing weighted geometry")
-		for path in fibres:
-			assert(model.get_node(path).multimesh == fibres[path], "Looper rebuilt a shared velvet fibre field")
 		if model != original:
-			assert(model.arm_skeletons[0] != original.arm_skeletons[0] and model.fleece != original.fleece, "Shared geometry must not share poses or materials")
+			assert(model.arm_skeletons[0] != original.arm_skeletons[0] and model.fleece != original.fleece and model.cream_material != original.cream_material, "Shared geometry must not share poses or materials")
 	for model in comparisons:
 		if model.actor == null: model.free()
 	var player: ATIPlayer = game.players[0]
@@ -148,10 +149,9 @@ func check_shared_caches() -> void:
 	player.set_character_skin(&"looper")
 	var replacement: Node3D = player.character_model()
 	replacement.animation_enabled = false
+	check_clay_surface(replacement)
 	assert(replacement.arm_meshes[0].mesh == meshes[0] and replacement.arm_meshes[1].mesh == meshes[1], "Skin switching rebuilt cached arms")
-	for path in fibres:
-		assert(replacement.get_node(path).multimesh == fibres[path], "Skin switching rebuilt velvet fibres")
-	assert(rig.weighted_meshes.size() == weighted_before and nap_cache.fields.size() == fibres_before, "Repeated Looper creation grew the immutable geometry caches")
+	assert(rig.weighted_meshes.size() == weighted_before, "Repeated Looper creation grew the immutable arm geometry cache")
 
 func check_geometry(model: Node3D) -> int:
 	var triangles := 0
@@ -311,6 +311,11 @@ func preview(player: ATIPlayer) -> void:
 	game.camera.position = Vector3(2.4, 1.7, 7.0)
 	game.camera.look_at(Vector3(0, 0.95, 3.3))
 	await capture("looper-three-quarter")
+	game.camera.position = Vector3(1.1, 1.70, 5.2)
+	game.camera.look_at(Vector3(0, 1.33, 3.3))
+	await capture("looper-clay-closeup")
+	game.camera.position = Vector3(2.4, 1.7, 7.0)
+	game.camera.look_at(Vector3(0, 0.95, 3.3))
 	pose(0.8, 0, true)
 	await capture("looper-holding")
 	reset_pose()

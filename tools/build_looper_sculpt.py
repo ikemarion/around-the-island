@@ -1,4 +1,4 @@
-"""Rebuild the Looper's continuous plush sculpt and reproducible Blender source.
+"""Rebuild the Looper's continuous clay sculpt and reproducible Blender source.
 
 Run: Blender --background --python tools/build_looper_sculpt.py
 Helpers take Godot-local metres: Y up, face +Z. Body/face/loop positions
@@ -22,16 +22,19 @@ def coord(p):
     return (p[0], -p[2], p[1])
 
 
-def material(name, color, roughness=.94):
+def material(name, color, roughness=.92):
     mat = bpy.data.materials.new(name)
     mat.diffuse_color = (*color, 1)
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get("Principled BSDF")
     bsdf.inputs["Base Color"].default_value = (*color, 1)
     bsdf.inputs["Roughness"].default_value = roughness
+    bsdf.inputs["Specular IOR Level"].default_value = .27
     return mat
 
 
+# Preserve the surface name for the runtime override contract. The character's
+# current art direction is hand-shaped matte clay, not a fuzzy fabric surface.
 fabric = material("LooperFabric", (.40, .30, .51))
 cuff = material("Cuff", (.86, .79, .63))
 ivory = material("Ivory", (.90, .84, .69))
@@ -139,10 +142,10 @@ BODY_PROFILE = [
     (-.433, .159, -.049, .132), (-.380, .226, -.047, .181),
     (-.290, .269, -.040, .211), (-.185, .273, -.023, .217),
     (-.080, .242, -.006, .204), (.020, .208, .012, .184),
-    (.120, .228, .030, .207), (.220, .303, .044, .251),
-    (.320, .330, .052, .259), (.415, .337, .053, .255),
-    (.510, .316, .050, .236), (.590, .268, .045, .198),
-    (.650, .197, .042, .151), (.687, .109, .041, .087),
+    (.120, .228, .030, .207), (.220, .328, .044, .263),
+    (.320, .371, .052, .277), (.415, .377, .053, .271),
+    (.510, .348, .050, .248), (.590, .292, .045, .208),
+    (.650, .207, .042, .155), (.687, .112, .041, .089),
     (.703, .000, .041, .000),
 ]
 
@@ -209,8 +212,15 @@ def face_surface(x, y):
 
 
 def eye_bounds(u, cy):
-    top = cy + .027 - .014 * u
-    return top - .070 * sqrt(max(0, 1 - u * u)), top
+    # A sleepy rounded slot, not a triangle with sharp outside eye corners.
+    # The wide middle has nearly level lids and a gently bowed lower edge;
+    # only the outermost fifth rounds into a soft semicircular end cap.
+    top = cy + .026 - .005 * u
+    bottom = cy - .030 - .009 * sqrt(max(0, 1 - u * u))
+    middle = (top + bottom) * .5
+    cap = max(0, (abs(u) - .76) / .24)
+    half = (top - bottom) * .5 * sqrt(max(0, 1 - cap * cap))
+    return middle - half, middle + half
 
 
 def surface_patch(name, left, right, bounds, mat, offset=.005, slices=40):
@@ -251,19 +261,19 @@ def surface_patch(name, left, right, bounds, mat, offset=.005, slices=40):
 
 
 for side, label in [(-1, "Left"), (1, "Right")]:
-    cx, cy = side * .126, .471
-    eye_width = .097
+    cx, cy = side * .137, .464
+    eye_width = .105
     def bounds(x, center=cx, center_y=cy):
         return eye_bounds((x - center) / eye_width, center_y)
     surface_patch("Eye" + label, cx - eye_width, cx + eye_width, bounds, ivory)
     # Both pupils glance sideways. Their tops tuck beneath the cloth lids.
-    pupil_cx = cx + .046
-    pupil_cy = .466
+    pupil_cx = cx + .050
+    pupil_cy = .465
     def pupil_bounds(x, center=pupil_cx, center_y=pupil_cy, eye_bounds_fn=bounds):
-        yextent = .030 * sqrt(max(0, 1 - ((x - center) / .026) ** 2))
+        yextent = .032 * sqrt(max(0, 1 - ((x - center) / .028) ** 2))
         low, high = eye_bounds_fn(x)
         return max(low + .001, center_y - yextent), min(high - .0003, center_y + yextent)
-    surface_patch("Pupil" + label, pupil_cx - .026, pupil_cx + .026, pupil_bounds, ink, .010, 28)
+    surface_patch("Pupil" + label, pupil_cx - .028, pupil_cx + .028, pupil_bounds, ink, .010, 28)
     # A softly rounded purple upper rim makes the heavy half-lidded gaze read
     # from an oblique camera without adding angry eyebrow rods.
     lid_points = []
@@ -295,21 +305,16 @@ for side, name in [(-1, "LeftArm"), (1, "RightArm")]:
         (side * .135, -.30, -.025), (side * .155, -.445, .012), tuple(wrist),
     ], .073, [1.1, 1.03, .94, .87, .85]),
         ellipsoid("Shoulder cap", (0, -.012, 0), (.086, .10, .084)),
-        ellipsoid("Generous soft palm", tuple(hand_point((.002, -.025, .009))),
-                  (.108, .118, .082))]
-    # Broad rounded mitten lobes, a curled-in thumb, no thin human fingers.
+        ellipsoid("Rounded clay mitten palm", tuple(hand_point((.002, -.047, .022))),
+                  (.120, .127, .101))]
+    # The mitten silhouette is one plump mass with shallow rounded scallops,
+    # not dangling fingers or a chain of little separately readable spheres.
     for finger in range(2):
-        x = (finger - .5) * .090
-        tip = hand_point((x * 1.04, -.137 + finger * .014, .036))
-        parts.append(tube("Puffy mitten lobe", [
-            tuple(hand_point((x, -.032, .008))),
-            tuple(hand_point((x * 1.08, -.098, .018))), tuple(tip),
-        ], .052, [1.07, 1, .96]))
-        parts.append(ellipsoid("Rounded finger tip", tuple(tip), (.052, .058, .051)))
-    thumb = hand_point((-.111, -.016, .058))
-    parts.append(tube("Cupped mitten thumb", [tuple(hand_point((-.049, .010, .015))),
-                                               tuple(thumb)], .054))
-    parts.append(ellipsoid("Rounded thumb", tuple(thumb), (.055, .058, .053)))
+        x = (finger - .5) * .106
+        tip = hand_point((x, -.115 + finger * .011, .046))
+        parts.append(ellipsoid("Shallow rounded mitten lobe", tuple(tip), (.067, .071, .077)))
+    thumb = hand_point((-.100, -.024, .076))
+    parts.append(ellipsoid("Curled clay thumb", tuple(thumb), (.067, .080, .074)))
     finish(fuse(name, parts, .0068), .29)
 
 for side, name in [(-1, "LeftLeg"), (1, "RightLeg")]:

@@ -5,6 +5,12 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50), then Loopers and a two-character lobby selector (v0.58). Doughballs, Pebble Pals, Patch Pals and Nubbins remain future passes. Reference and actual Godot captures: `docs/art/socklings/` and `docs/art/loopers/`.
 
+## 0.59 Looper clay refinement
+
+- Replaced the fuzzy velvet surface and close-up fibre geometry with matte modeling clay: subtle hand-worked relief, restrained color variation and broad, low-sheen highlights. Purple and cream share the clay treatment; Sockling's fleece is unchanged.
+- Refined the approved silhouette: broader rounded cheeks/head, softly capped elongated sleepy eyes instead of angular wedges, and fuller fused mitten lobes. Preserved the open loop, smirk, continuous body/hip joins, sole geometry and rig anchors.
+- Cosmetic only. Selection, decoy copying, movement, hitboxes, scores and power-up rules are unchanged. Build v0.59 keeps protocol 17; everyone should update for matching art. Native comparison/close-up/animation: `docs/art/loopers/v059/`.
+
 ## 0.58 Loopers join the roster
 
 - Added the approved Looper as a separate selectable character: continuous purple plush pear body, rounded head with a genuinely open loop, half-lidded ivory eyes with sideways pupils, a small smirk, puffy mittens, soft feet and cream ankle cuffs. A distinct fine-pile velvet shader and short close-up fibre geometry distinguish it from Sockling's curly terry fleece.
