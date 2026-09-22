@@ -94,14 +94,17 @@ def finish(obj, ratio=.42):
 # Continuous shoulder/neck/head volume. The mouth is actually cut into it,
 # leaving a connected fabric cheek and thick lower lip, not stacked pancakes.
 body = fuse("Body", [
-    ellipsoid("Torso", (0,-.065,-.035), (.222,.435,.192)),
-    ellipsoid("Neck", (0,.22,-.050), (.225,.31,.190)),
-    ellipsoid("Skull", (0,.405,.045), (.282,.288,.262)),
-    ellipsoid("Upper snout", (0,.472,.145), (.290,.185,.205)),
-    ellipsoid("Chin", (0,.223,.092), (.265,.145,.245)),
+    ellipsoid("Torso", (0,-.045,-.035), (.238,.435,.195)),
+    ellipsoid("Sock heel under cuff", (0,-.405,-.035), (.227,.150,.190)),
+    ellipsoid("Neck", (0,.24,-.015), (.249,.325,.206)),
+    ellipsoid("Skull", (0,.435,.055), (.314,.270,.254)),
+    # Broad upper lip projects past the lower lip: a floppy sock muzzle,
+    # not a spherical head with a tall, circular hole cut through it.
+    ellipsoid("Upper snout", (0,.500,.205), (.335,.135,.280)),
+    ellipsoid("Chin", (0,.277,.140), (.305,.103,.265)),
 ], .008)
 body.data.materials.append(mouth)
-cutter = ellipsoid("Mouth opening", (0,.382,.320), (.264,.128,.367))
+cutter = ellipsoid("Mouth opening", (0,.390,.365), (.285,.104,.420))
 cutter.data.materials.append(mouth)
 bpy.context.view_layer.objects.active = body
 mod = body.modifiers.new("Puppet mouth cavity", "BOOLEAN")
@@ -117,7 +120,7 @@ mod.segments = 3
 mod.limit_method = "ANGLE"
 mod.angle_limit = .42
 bpy.ops.object.modifier_apply(modifier=mod.name)
-finish(body, .46)
+finish(body, .42)
 
 def smoothstep(a, b, x):
     t = max(0, min(1, (x-a)/(b-a)))
@@ -146,36 +149,37 @@ for v in jaw_key.data:
     v.co.y = -(-.10+dy*sin(angle)+dz*cos(angle))
 
 for side, name in [(-1,"LeftArm"),(1,"RightArm")]:
-    wrist = Vector((side*.32,-.36,.075))
+    wrist = Vector((side*.62,-.36 if side == -1 else -.27,.075 if side == -1 else .14))
     def hand_point(offset):
-        angle = .95 if side == 1 else 0
-        x,y,z = offset
+        angle = 1.13 if side == 1 else -.10
+        x,y,z = (value*1.10 for value in offset)
         return wrist+Vector((x*cos(angle)-y*sin(angle),x*sin(angle)+y*cos(angle),z))
-    parts = [tube("Soft elbow", [(0,0,0),(side*.17,-.06,0),(side*.29,-.20,.020),tuple(wrist)], .064)]
-    parts.append(ellipsoid("Mitten palm", tuple(wrist), (.102,.098,.059)))
-    # Three softly merged lobes and a short thumb; no bead-like knuckles.
-    for finger in range(3):
-        x = (finger-1)*.062
-        start = hand_point((x,-.028,0))
-        end = hand_point((x*1.45,-.134+abs(finger-1)*.018,.015))
-        parts.append(tube("Finger", [tuple(start),tuple((start+end)/2),tuple(end)], .036))
-        parts.append(ellipsoid("Finger tip", tuple(end), (.036,.038,.036)))
-    thumb = hand_point((.131,-.010,.027))
-    parts.append(tube("Thumb", [tuple(hand_point((.055,.017,0))),tuple(thumb)], .041))
-    parts.append(ellipsoid("Thumb tip",tuple(thumb),(.042,.041,.041)))
-    arm = finish(fuse(name,parts,.0065),.36)
+    parts = [tube("Soft elbow", [(0,0,0),(side*.28,-.040,0),(side*.49,-.20,.025),tuple(wrist)], .072)]
+    parts.append(ellipsoid("Mitten palm", tuple(wrist), (.124,.117,.078)))
+    # Reference mittens have three broad lobes TOTAL (two fingers + thumb).
+    # Broad webbing and rounded tips avoid the previous thin four-finger hand.
+    for finger in range(2):
+        x = (finger-.5)*.091
+        start = hand_point((x,-.025,0))
+        end = hand_point((x*1.35,-.162+finger*.033,.018))
+        parts.append(tube("Mitten finger", [tuple(start),tuple((start+end)/2),tuple(end)], .051))
+        parts.append(ellipsoid("Mitten tip", tuple(end), (.051,.054,.049)))
+    thumb = hand_point((.143,.010,.021))
+    parts.append(tube("Thumb", [tuple(hand_point((.055,.020,0))),tuple(thumb)], .052))
+    parts.append(ellipsoid("Thumb tip",tuple(thumb),(.055,.052,.050)))
+    arm = finish(fuse(name,parts,.0065),.32)
     soft_joint(arm, "ElbowFlex", (side*.23,-.14,.012), -.90, .075, .225)
 
 for side, name in [(-1,"LeftLeg"),(1,"RightLeg")]:
     leg = fuse(name,[
-        tube("Bent knee",[(0,0,0),(side*.055,-.13,-.045),(side*.060,-.23,.025)],.080),
-        ellipsoid("Padded sock foot",(side*.050,-.305,.09),(.132,.105,.20)),
+        tube("Bent knee",[(0,0,0),(side*.120,-.105,-.055),(side*.100,-.24,.020)],.087),
+        ellipsoid("Padded sock foot",(side*.110,-.320,.070),(.177,.081,.179)),
     ],.007)
     leg.data.materials.append(sock_foot)
     for poly in leg.data.polygons:
         if poly.center.z < -.230:
             poly.material_index = 1
-    finish(leg,.43)
+    finish(leg,.34)
     soft_joint(leg, "KneeFlex", (side*.055,-.13,-.045), .90, .08, .20)
 
 foot = ellipsoid("Foot", (0,0,0), (.137,.10,.205))

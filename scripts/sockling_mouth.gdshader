@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded;
-uniform vec4 felt_color : source_color = vec4(0.30,0.125,0.08,1.0);
+uniform vec4 felt_color : source_color = vec4(0.34,0.150,0.105,1.0);
 varying vec3 local_point;
 void vertex() { local_point = VERTEX; }
 void fragment() {

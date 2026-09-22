@@ -32,6 +32,9 @@ func run() -> void:
 		assert(art.has_node("Puppet/Head/UpperMuzzle"))
 		assert(art.sculpt_body.mesh.get_blend_shape_count() == 1)
 		assert(art.sculpt_body.mesh.get_blend_shape_name(0) == "JawOpen")
+		assert(art.sculpt_body.mesh.get_aabb().size.x > 0.63,"Keep the broad reference muzzle")
+		assert(art.eyes[0].get_node("IvoryEye").scale.x < 0.15,"Eyes should be small and embedded, not stalk-like")
+		assert(art.arm_meshes[0].mesh.get_aabb().size.x > 0.60,"Keep the reference's long floppy arms")
 		assert(art.sculpt_body.has_node("CloseUpFleece"))
 		assert(art.sculpt_body.get_node("CloseUpFleece").visibility_range_end == 7.0)
 		assert(art.skin_materials.size() == 3)
@@ -95,6 +98,18 @@ func run() -> void:
 			player.visible = player.player_index == 3
 		var gold: ATIPlayer = main.players[3]
 		gold.position = Vector3(0,-0.05,3.3)
+		if "--reference-preview" in OS.get_cmdline_user_args():
+			var reference_puppet = gold.body_mesh.get_node("Sockling")
+			reference_puppet.motion.reset()
+			reference_puppet.phase = 0
+			for frame in 90: reference_puppet.animate(1.0/60.0,0,false,false,false)
+			main.camera.position = Vector3(-1.8,1.52,7.1)
+			main.camera.look_at(Vector3(0,0.83,3.3))
+			await capture("sockling-reference-angle")
+			await reference_comparison(main)
+			main.camera.position = Vector3(0,1.2,7.4)
+			main.camera.look_at(Vector3(0,0.83,3.3))
+			await capture("sockling-front")
 		main.camera.position = Vector3(2.4,1.6,6.6)
 		main.camera.look_at(Vector3(0,0.9,3.3))
 		await capture("sockling-gold")
@@ -128,3 +143,43 @@ func capture(title: String) -> void:
 	for i in 5: await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://build/network-test/"+title+".png")
+
+func reference_comparison(main: Node3D) -> void:
+	# A native Godot UI beside the actual 3D viewport, not a retouched render.
+	var sheet := CanvasLayer.new()
+	root.add_child(sheet)
+	var paper := ColorRect.new()
+	paper.color = Color("efe4d3")
+	paper.size = Vector2(584,720)
+	sheet.add_child(paper)
+	var title_bar := ColorRect.new()
+	title_bar.color = Color("efe4d3")
+	title_bar.size = Vector2(1280,105)
+	sheet.add_child(title_bar)
+	var reference := TextureRect.new()
+	var crop := AtlasTexture.new()
+	crop.atlas = load("res://docs/art/socklings/approved-roster.png")
+	crop.region = Rect2(529,120,472,412)
+	reference.texture = crop
+	reference.position = Vector2(16,121)
+	reference.size = Vector2(552,462)
+	reference.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sheet.add_child(reference)
+	for entry in [["APPROVED CONCEPT",Vector2(35,52)],["CURRENT GODOT MODEL",Vector2(655,52)]]:
+		var label := Label.new()
+		label.text = entry[0]
+		label.position = entry[1]
+		label.add_theme_font_size_override("font_size",26)
+		label.add_theme_color_override("font_color",Color("203b33"))
+		sheet.add_child(label)
+	var note := Label.new()
+	note.text = "Same in-game mesh, materials and idle pose. No lighting or paint-over added."
+	note.position = Vector2(595,665)
+	note.add_theme_font_size_override("font_size",15)
+	note.add_theme_color_override("font_color",Color("203b33"))
+	sheet.add_child(note)
+	main.camera.h_offset = -0.94
+	await capture("sockling-reference-comparison")
+	main.camera.h_offset = 0
+	sheet.queue_free()
+	await process_frame

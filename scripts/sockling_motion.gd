@@ -126,8 +126,9 @@ func update(delta: float, measured_speed: float, holding: bool, airborne: bool, 
 	model.chest.position = Vector3(sin(stride_phase)*0.014*gait,breath+absf(sin(stride_phase))*0.029*gait,0)
 	var lean := run*0.13*gait+landing_pulse*0.12-slide*0.22+crouch*0.055
 	var wobble := sin(clock*19.0)*0.085*stun
-	model.chest.rotation = model.chest.rotation.lerp(Vector3(lean,-turn*0.018,-0.035+sin(stride_phase)*0.055*gait-turn*0.026+wobble),blend)
-	model.head.rotation = model.head.rotation.lerp(Vector3(-lean*0.3+sin(stride_phase*2-0.6)*0.02*gait,-turn*0.022,-sin(stride_phase-0.6)*0.035*gait-wobble*0.5),1.0-exp(-10.0*dt))
+	# Relaxed, asymmetric sock-puppet stance from the approved reference.
+	model.chest.rotation = model.chest.rotation.lerp(Vector3(lean+0.025,-turn*0.018,-0.20*(1.0-gait*0.55)+sin(stride_phase)*0.055*gait-turn*0.026+wobble),blend)
+	model.head.rotation = model.head.rotation.lerp(Vector3(0.10-lean*0.3+sin(stride_phase*2-0.6)*0.02*gait,-turn*0.022,-sin(stride_phase-0.6)*0.035*gait-wobble*0.5),1.0-exp(-10.0*dt))
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var t := fposmod(stride_phase/TAU+i*0.5,1.0)
@@ -142,7 +143,7 @@ func update(delta: float, measured_speed: float, holding: bool, airborne: bool, 
 		leg_pitch = lerpf(leg_pitch,-0.90+float(i)*0.20,slide)
 		knee = lerpf(knee,0.13,slide)
 		var leg: Node3D = model.legs[i]
-		leg.rotation = leg.rotation.lerp(Vector3(leg_pitch,side*0.04,side*(0.025+air*0.10)),blend)
+		leg.rotation = leg.rotation.lerp(Vector3(leg_pitch,side*0.35,side*(0.045+air*0.10)),blend)
 		var leg_mesh: MeshInstance3D = model.leg_meshes[i]
 		var flex := lerpf(leg_mesh.get_blend_shape_value(0),clampf(knee,0,1),blend)
 		leg_mesh.set_blend_shape_value(0,flex)

@@ -3,9 +3,9 @@ extends Node3D
 ## No animation drives physics, and remote movement uses observed displacement.
 const ART = preload("res://scripts/house_prop_art.gd")
 const SCULPT = preload("res://art/characters/sockling/sockling-sculpt.glb")
-const COLORS := [Color("65abc3"),Color("d88578"),Color("72a18b"),Color("c89936")]
-const CREAM := Color("eddfbd")
-const CORAL := Color("bc6558")
+const COLORS := [Color("65abc3"),Color("d88578"),Color("72a18b"),Color("ba8e50")]
+const CREAM := Color("dfd0b2")
+const CORAL := Color("b16b5e")
 var actor: ATIPlayer
 var fleece: ShaderMaterial
 var chest: Node3D
@@ -28,7 +28,7 @@ var phase := 0.0
 var gait := 0.0
 var last_position := Vector3.ZERO
 var animation_enabled := true
-var preview_color := Color("c89936")
+var preview_color := Color("ba8e50")
 var skin_materials: Array[ShaderMaterial] = []
 var sculpt_body: MeshInstance3D
 static var cuff_mesh: ArrayMesh
@@ -87,9 +87,9 @@ static func knitted_cuff() -> ArrayMesh:
 			for corner in [Vector2i(row,segment),Vector2i(row+1,segment+1),Vector2i(row+1,segment),Vector2i(row,segment),Vector2i(row,segment+1),Vector2i(row+1,segment+1)]:
 				var p := profile[corner.x]
 				var a: float = corner.y*TAU/240.0
-				var radius: float = p.x+(0.005*cos(a*40) if p.x > 0.23 else 0.0)
+				var radius: float = p.x+(0.0075*cos(a*28) if p.x > 0.23 else 0.0)
 				var tangent := profile[mini(profile.size()-1,corner.x+1)]-profile[maxi(0,corner.x-1)]
-				var slope: float = -0.005*40*sin(a*40)/maxf(radius,0.01)
+				var slope: float = -0.0075*28*sin(a*28)/maxf(radius,0.01)
 				surface.set_normal(Vector3(tangent.y*(cos(a)+slope*sin(a)),-tangent.x,tangent.y*(sin(a)-slope*cos(a))/0.88).normalized())
 				surface.add_vertex(Vector3(radius*cos(a),p.y,radius*sin(a)*0.88))
 	cuff_mesh = surface.commit()
@@ -109,18 +109,19 @@ func _ready() -> void:
 	cuff.material_override = yarn
 	head = group(chest,"Head",Vector3(0,0.0,0.015))
 	sculpt_body = sculpt_part(head,source,"Body","UpperMuzzle")
-	jaw = group(head,"LowerJaw",Vector3(0,0.248,0.13))
-	soft(jaw,Vector3(0.205,0.030,0.16),Vector3(0,0,0.10),"Tongue",ART.material(Color("a85241"),0.99))
+	jaw = group(head,"LowerJaw",Vector3(0,0.334,0.12))
+	var tongue := soft(jaw,Vector3(0.210,0.025,0.250),Vector3(0.012,0,0.13),"Tongue",ART.material(Color("a65742"),0.99))
+	tongue.rotation.x = -0.22
 	for side in [-1,1]:
-		var eye := group(head,"EyeLeft" if side == -1 else "EyeRight",Vector3(side*0.118,0.700,0.115))
+		var eye := group(head,"EyeLeft" if side == -1 else "EyeRight",Vector3(side*0.132,0.671,0.172))
 		eyes.append(eye)
-		soft(eye,Vector3(0.164,0.184,0.164),Vector3.ZERO,"IvoryEye",ART.material(CREAM,0.48))
-		soft(eye,Vector3(0.052,0.074,0.027),Vector3(0.022,0.000,0.079),"Pupil",ART.material(Color("28251d"),0.32))
-		soft(eye,Vector3.ONE*0.013,Vector3(0.014,0.022,0.093),"EyeGlint",ART.material(Color.WHITE,0.3))
+		soft(eye,Vector3(0.142,0.160,0.145),Vector3.ZERO,"IvoryEye",ART.material(CREAM,0.90))
+		soft(eye,Vector3(0.043,0.062,0.019),Vector3(0.022,0.000,0.068),"Pupil",ART.material(Color("29251f"),0.70))
+		soft(eye,Vector3.ONE*0.008,Vector3(0.017,0.018,0.078),"EyeGlint",ART.material(Color("efe4ce"),0.8))
 		var arm := group(chest,"LeftArm" if side == -1 else "RightArm",Vector3(side*0.23,0.12,-0.03))
 		arms.append(arm)
 		arm_meshes.append(sculpt_part(arm,source,"LeftArm" if side == -1 else "RightArm","FabricArmAndHand"))
-		var leg := group(self,"LeftLeg" if side == -1 else "RightLeg",Vector3(side*0.14,-0.41,-0.015))
+		var leg := group(self,"LeftLeg" if side == -1 else "RightLeg",Vector3(side*0.21,-0.41,-0.015))
 		legs.append(leg)
 		leg_meshes.append(sculpt_part(leg,source,"LeftLeg" if side == -1 else "RightLeg","SoftLegAndFoot"))
 	source.free()

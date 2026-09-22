@@ -6,15 +6,19 @@ static var tip: ArrayMesh
 
 static func tuft() -> ArrayMesh:
 	if tip != null: return tip
-	var points := [Vector3(0,0.004,0),Vector3(0,-0.0015,0),Vector3(0.002,0,0),Vector3(0,0,0.002),Vector3(-0.002,0,0),Vector3(0,0,-0.002)]
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for index in 4:
-		var a := index+2
-		var b := (index+1)%4+2
-		for vertex in [0,b,a,1,a,b]:
-			surface.set_normal(points[vertex].normalized())
-			surface.add_vertex(points[vertex])
+	# Crossed round fibre arches replace the old pointed octahedra. Twelve
+	# triangles per instance; soft cloth edges without a strand simulation.
+	for axis in 2:
+		var along := Vector3.RIGHT if axis == 0 else Vector3.FORWARD
+		var across := Vector3.FORWARD if axis == 0 else Vector3.RIGHT
+		for segment in 3:
+			for corner in [Vector2i(segment,0),Vector2i(segment+1,1),Vector2i(segment,1),Vector2i(segment,0),Vector2i(segment+1,0),Vector2i(segment+1,1)]:
+				var t := float(corner.x)/3.0
+				var point: Vector3 = along*((t-0.5)*0.008)+Vector3.UP*(sin(t*PI)*0.0047-0.0005)+across*((corner.y-0.5)*0.0014)
+				surface.set_normal((Vector3.UP+along*((t-0.5)*1.5)).normalized())
+				surface.add_vertex(point)
 	tip = surface.commit()
 	return tip
 

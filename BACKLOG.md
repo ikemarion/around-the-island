@@ -5,6 +5,14 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.53 Sockling reference-feel pass
+
+- Broader, overhanging upper muzzle and reshaped grin/cheeks; smaller eyes sit into the head instead of above it. Refined tongue and felt lining remain animated with the mouth.
+- Longer asymmetric noodle arms, three-lobed mitten hands, bowed legs, broader splayed soft feet and the rounded sock heel visible below the cuff. Resting body lean and head tilt follow the approved concept; existing action poses are preserved.
+- Curly triplanar yarn replaces speckled noise, with reduced contrast/specular, a warmer gold palette and rounded fibre arches instead of pointed tips. Larger 28-column knitted cuff ribs and a thinner coral stripe.
+- Multiple front/side/reference-angle Godot iterations and an updated animation capture. Base character remains under 100k triangles; unchanged collider and protocol 16. Morph, visibility, movement-pose and local host/client checks cover the updated asset. No low-end hardware or WAN reliability claim.
+- Direct concept/native-render comparison, front/side views and animation: `docs/art/socklings/v053/`. Comparison preserves the actual game lighting; no paint-over or artificial studio-light replacement.
+
 ## 0.52 Sockling puppet animation
 
 - Added soft elbow and knee morphs to the existing sculpt, with locally blended walk/run strides, foot clearance, opposite arm swing, body bounce, turn lean, secondary head motion and staggered blinks.

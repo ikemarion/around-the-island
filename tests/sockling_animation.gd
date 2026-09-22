@@ -132,7 +132,7 @@ func preview(player: ATIPlayer) -> void:
 	game.camera.fov = 45
 	game.camera.position = Vector3(3.4,2.5,7.5)
 	game.camera.look_at(Vector3(0,1.55,3.3))
-	DirAccess.make_dir_recursive_absolute("res://build/network-test/v052-animation")
+	DirAccess.make_dir_recursive_absolute("res://build/network-test/sockling-animation-frames")
 	for frame in 270:
 		var t := frame/30.0
 		var speed := 0.0
@@ -164,4 +164,4 @@ func preview(player: ATIPlayer) -> void:
 		art.animate(1.0/30.0,speed,holding,flying,t>=8.0,vertical,crouched,sliding)
 		await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://build/network-test/v052-animation/frame-%03d.png" % frame)
+		root.get_texture().get_image().save_png("res://build/network-test/sockling-animation-frames/frame-%03d.png" % frame)
