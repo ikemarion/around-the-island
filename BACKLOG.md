@@ -5,6 +5,13 @@
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
 - Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
 
+## 0.57 Decoy Double copies its owner
+
+- Replaced the deployed pickup doll with the actual full-size Sockling model, matching the activating player's rendered fleece color, face, cuff, feet and articulated arms. The collectible icon itself is unchanged.
+- Copies have their own materials/rig and never inherit the owner's first-person hiding, invisibility, stun, input or abilities. They face their escape direction and animate from observed travel on host and replicas; a blocked copy settles into idle.
+- Existing four-second duration, hidden owner with footprints, bot distraction, movement/collision rules and effect cleanup are preserved. Skin color and facing use existing effect fields; protocol 16 is unchanged. Friends need the new build to see the new model.
+- Four-slot skin/rig isolation and client reconstruction tests passed, alongside buddy, chaos, Sockling, multiplayer and round-transition regressions. Two-process localhost tests verify both host and joining-player decoy appearances, visible animated copies with hidden originals, and expiry removal. This is not a WAN reliability or low-end performance test.
+
 ## 0.56 natural Sockling arms and motion
 
 - Re-sculpted the wide, asymmetric bind-pose arms into relaxed hanging limbs with a tapered wrist, cupped palms and inward-facing thumbs; preserved the fleece, head, cuff and soft feet.

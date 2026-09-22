@@ -4,7 +4,9 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.56 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.56-Windows.zip), extract it, and run the included ATI executable. Protocol 16. New in v0.56: relaxed, tapered Sockling arms and softer mitten hands, with articulated elbows, trailing wrists, smoother opposite arm swings, forward carrying poses and quieter body/landing motion. Animation only: player movement, collisions and network messages are unchanged. [Native Godot animation preview and notes](docs/art/socklings/v056/README.md).
+Download [ATI v0.57 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.57-Windows.zip), extract it, and run the included ATI executable. Protocol 16. New in v0.57: Decoy Double copies the activating player's full-size Sockling skin and color, including the current sculpt and arm rig, instead of spawning the pickup doll. The independent copy faces its escape direction and animates as it moves on both host and clients. The real player's four-second invisibility and visible footsteps are unchanged. [Actual game capture and notes](docs/art/decoy-double/v057/README.md).
+
+Includes v0.56's relaxed, tapered Sockling arms and softer mitten hands, with articulated elbows, trailing wrists, smoother opposite arm swings, forward carrying poses and quieter body/landing motion. [Native Godot animation preview and notes](docs/art/socklings/v056/README.md).
 
 Also includes v0.55's approved cartoon stun-gun collectible, with a rounded mint shell, large cyan lens, cream collar, curved coral grip and gold lightning badges. Its original one-shot behavior is unchanged. Removed the floating KITCHEN / LIVING ROOM / GARAGE labels over the four connecting doorways, leaving their frames and collision unchanged. [Approved reference and actual Godot captures](docs/art/stun-gun-concept/README.md).
 

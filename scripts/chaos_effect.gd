@@ -28,6 +28,13 @@ func setup(effect_kind: StringName, source, target = null) -> void:
 	target_slot = target.player_index if target != null else -1
 	direction = source._get_flat_aim_direction()
 	tint = source.body_color
+	if kind == &"decoy_double":
+		# Capture the rendered skin, not the legacy capsule/team color. Keep
+		# this independent of the owner's invisibility and later slot changes.
+		var source_art = source.body_mesh.get_node_or_null("Sockling")
+		if is_instance_valid(source_art):
+			tint = source_art.fleece.get_shader_parameter("fleece_color")
+		rotation.y = atan2(direction.x, direction.z)
 	remaining = 0.55 if kind == &"air_horn_gust" else (6.0 if kind == &"hot_potato" else (4.0 if kind == &"decoy_double" else 5.0))
 	global_position = source.global_position
 	if kind == &"pocket_wall":
@@ -77,13 +84,11 @@ func _build_visuals() -> void:
 			decoy_body.collision_layer = 0
 			decoy_body.collision_mask = 3 if not replica else 0
 			add_child(decoy_body)
-			var decoy_art := Node3D.new()
+			# Reuse the actual character sculpt/rig, never an ATIPlayer (which
+			# would add input, abilities, scoring or first-person hiding).
+			var decoy_art = load("res://scripts/decoy_character.gd").new()
+			decoy_art.skin_color = tint
 			decoy_body.add_child(decoy_art)
-			decoy_art.position.y = 0.84
-			decoy_art.scale = Vector3.ONE * 1.8
-			var builder := preload("res://scripts/item_pickup.gd").new()
-			builder._make_decoy_doll(decoy_art,tint)
-			builder.free()
 			var shape := CollisionShape3D.new()
 			var capsule_shape := CapsuleShape3D.new()
 			capsule_shape.radius = 0.45
