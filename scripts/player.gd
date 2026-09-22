@@ -93,6 +93,7 @@ var charging_throw := false
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 
 var player_index: int = 0
+var character_id: StringName = &"sockling"
 var joypad_id: int = -1
 var has_token: bool = false
 var ai_controlled: bool = false
@@ -187,6 +188,29 @@ func configure(index: int, assigned_joypad: int, color: Color, controlled_by_ai:
 
 func set_ai_target(target: ATIPlayer) -> void:
 	ai_target = target
+
+
+func character_model() -> Node3D:
+	if not is_instance_valid(body_mesh): return null
+	for node_name in ["Sockling", "Looper"]:
+		var model := body_mesh.get_node_or_null(node_name) as Node3D
+		if is_instance_valid(model): return model
+	return null
+
+
+func set_character_skin(id: StringName) -> void:
+	var catalog = load("res://scripts/character_catalog.gd")
+	var safe_id: StringName = catalog.sanitize(id)
+	var previous := character_model()
+	if character_id == safe_id and is_instance_valid(previous): return
+	character_id = safe_id
+	if not is_instance_valid(body_mesh): return
+	if is_instance_valid(previous):
+		body_mesh.remove_child(previous)
+		previous.queue_free()
+	body_mesh.mesh = null
+	body_mesh.add_child(catalog.create(character_id, self))
+	_refresh_character_visuals()
 
 
 func set_network_input(movement: Vector2, aim_forward: Vector3, jump: bool, crouch: bool, interact: bool, throw_item: bool, quick_item: bool) -> void:

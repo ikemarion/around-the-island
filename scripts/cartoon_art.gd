@@ -101,9 +101,7 @@ func make_box(parent: Node3D) -> void:
 func make_character(player: ATIPlayer) -> void:
 	# Keep BodyMesh as the visibility/facing/stance root, replacing its old capsule.
 	player.body_mesh.mesh = null
-	var character := preload("res://scripts/sockling_art.gd").new()
-	character.actor = player
-	player.body_mesh.add_child(character)
+	player.set_character_skin(player.character_id)
 
 func make_horn(parent: Node3D) -> void:
 	var model := Node3D.new()

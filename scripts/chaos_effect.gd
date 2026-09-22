@@ -10,6 +10,7 @@ var spent := false
 var transfer_cooldown := 0.7
 var direction := Vector3.FORWARD
 var tint := Color.WHITE
+var character_id: StringName = &"sockling"
 var end_point := Vector3.ZERO
 var decoy_body: CharacterBody3D
 var rope: MeshInstance3D
@@ -31,7 +32,8 @@ func setup(effect_kind: StringName, source, target = null) -> void:
 	if kind == &"decoy_double":
 		# Capture the rendered skin, not the legacy capsule/team color. Keep
 		# this independent of the owner's invisibility and later slot changes.
-		var source_art = source.body_mesh.get_node_or_null("Sockling")
+		character_id = source.character_id
+		var source_art = source.character_model()
 		if is_instance_valid(source_art):
 			tint = source_art.fleece.get_shader_parameter("fleece_color")
 		rotation.y = atan2(direction.x, direction.z)
@@ -87,6 +89,7 @@ func _build_visuals() -> void:
 			# Reuse the actual character sculpt/rig, never an ATIPlayer (which
 			# would add input, abilities, scoring or first-person hiding).
 			var decoy_art = load("res://scripts/decoy_character.gd").new()
+			decoy_art.character_id = character_id
 			decoy_art.skin_color = tint
 			decoy_body.add_child(decoy_art)
 			var shape := CollisionShape3D.new()
@@ -351,7 +354,7 @@ func _update_hot_potato_visual() -> void:
 
 
 func network_state() -> Dictionary:
-	return {"effect": kind, "owner": owner_slot, "target": target_slot, "time": remaining, "tint": tint, "end": end_point, "rotation": rotation}
+	return {"effect": kind, "owner": owner_slot, "target": target_slot, "time": remaining, "tint": tint, "end": end_point, "rotation": rotation, "character": character_id}
 
 
 func apply_state(state: Dictionary) -> void:
@@ -360,6 +363,7 @@ func apply_state(state: Dictionary) -> void:
 	target_slot = state.target
 	remaining = state.time
 	tint = state.tint
+	character_id = load("res://scripts/character_catalog.gd").sanitize(StringName(state.get("character", "sockling")))
 	end_point = state.end
 	rotation = state.rotation
 	if kind == &"":

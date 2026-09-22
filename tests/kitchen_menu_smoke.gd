@@ -33,7 +33,7 @@ func run() -> void:
 	main._receive_roster([true, true, true, false], 1)
 	main._process(0)
 	assert(ui.seats[2].name.text == "You" and ui.seats[0].role.text == "Host")
-	assert(ui.seats[2].portrait.player_color == main.PLAYER_COLORS[2])
+	assert(ui.seats[2].portrait.player_color == main.CHARACTER_CATALOG.color_for(&"sockling", 2))
 	assert(main.menu_controls.Start.visible and not main.menu_controls.Start.disabled)
 	await capture("kitchen-joiner")
 	main.session_mode = &"hosting"

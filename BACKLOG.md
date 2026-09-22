@@ -3,7 +3,15 @@
 ## Character roster rollout
 
 - Approved Round 02 concepts: Doughballs, Socklings, Pebble Pals, Patch Pals, Nubbins and Loopers.
-- Socklings first (v0.50). Remaining five designs and a character selector are future passes, not implemented yet. Reference and actual Godot captures: `docs/art/socklings/`.
+- Socklings first (v0.50), then Loopers and a two-character lobby selector (v0.58). Doughballs, Pebble Pals, Patch Pals and Nubbins remain future passes. Reference and actual Godot captures: `docs/art/socklings/` and `docs/art/loopers/`.
+
+## 0.58 Loopers join the roster
+
+- Added the approved Looper as a separate selectable character: continuous purple plush pear body, rounded head with a genuinely open loop, half-lidded ivory eyes with sideways pupils, a small smirk, puffy mittens, soft feet and cream ankle cuffs. A distinct fine-pile velvet shader and short close-up fibre geometry distinguish it from Sockling's curly terry fleece.
+- Reworked the first sculpt after native engine comparisons to remove visible chin/neck bands, broaden the body/head and bury the hip joins. Existing skeletal arm follow-through and grounded leg animation support walking, running, carrying, jumping, crouching, sliding and stun, with restrained loop motion. No changes to movement, hitboxes, camera, scores or abilities.
+- Added a lobby selector with saved local preference, validated host admission/selection requests, player roster/snapshot replication, and late-rejoin cleanup. Selection locks once a match begins. Protocol 17 requires everyone to update to v0.58.
+- Decoy Double now carries the selected character identity as well as its captured color. Both Looper and Sockling copies stay visible independently of hidden owners and retain the four-second lifetime.
+- Tests cover four Looper palettes, real loop opening, materials/geometry budgets, limb rigs, movement states, visibility and replica resets; local two-process tests cover lobby selection, mixed characters/decoys and reconnecting with a different character. Native captures and animation: `docs/art/loopers/v058/`. These checks do not establish WAN/tunnel reliability or low-end performance.
 
 ## 0.57 Decoy Double copies its owner
 

@@ -9,8 +9,10 @@ const TAG_DISTANCE := 1.22
 const TAG_COOLDOWN := 0.85
 const SCORE_TRACK_LENGTH := 6.6
 const MAX_PLAYERS := 4
-const PROTOCOL_VERSION := 16
-const BUILD_VERSION := "0.57"
+const PROTOCOL_VERSION := 17
+const BUILD_VERSION := "0.58"
+const CHARACTER_CATALOG := preload("res://scripts/character_catalog.gd")
+var preferred_character: StringName = &"sockling"
 var network_diagnostics: Node
 var report_transfer: Node
 var obstacle_last_sent: Dictionary = {}
@@ -102,6 +104,7 @@ var start_requested_ms := 0
 
 
 func _ready() -> void:
+	_load_character_preference()
 	network_diagnostics = preload("res://scripts/network_diagnostics.gd").new()
 	network_diagnostics.name = "NetworkDiagnostics"
 	network_diagnostics.game = self
@@ -429,11 +432,11 @@ func _on_joined_server() -> void:
 	connection_stage = "Connected · checking game version"
 	lobby_status.text = "Connected. Checking game version…"
 	print("ATI_NETWORK CLIENT_CONNECTED")
-	_submit_version.rpc_id(1, PROTOCOL_VERSION)
+	_submit_version.rpc_id(1, PROTOCOL_VERSION, preferred_character)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _submit_version(version: int) -> void:
+func _submit_version(version: int, requested_character: StringName = &"sockling") -> void:
 	var peer_id := multiplayer.get_remote_sender_id()
 	if session_mode not in [&"hosting", &"host"] or not pending_peers.has(peer_id):
 		return
@@ -446,7 +449,7 @@ func _submit_version(version: int) -> void:
 				network_diagnostics.record("disconnect_requested",{"peer":peer_id,"reason":"version_mismatch"})
 				multiplayer.multiplayer_peer.disconnect_peer(peer_id))
 		return
-	_admit_player(peer_id)
+	_admit_player(peer_id, CHARACTER_CATALOG.sanitize(requested_character))
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -463,7 +466,7 @@ func _on_remote_player_connected(peer_id: int) -> void:
 		pending_peers[peer_id] = Time.get_ticks_msec()
 
 
-func _admit_player(peer_id: int) -> void:
+func _admit_player(peer_id: int, selected_character: StringName = &"sockling") -> void:
 	if session_mode not in [&"hosting", &"host"] or not multiplayer.is_server():
 		return
 	var slot := _first_open_slot()
@@ -472,6 +475,7 @@ func _admit_player(peer_id: int) -> void:
 	peer_to_slot[peer_id] = slot
 	active_slots[slot] = true
 	_cleanup_slot(slot)
+	players[slot].set_character_skin(selected_character)
 	active_slots[slot] = true
 	players[slot].ai_controlled = false
 	players[slot].network_controlled = true
@@ -724,7 +728,7 @@ func _update_world_scoreboard() -> void:
 
 func _player_state(slot: int) -> Dictionary:
 	var p := players[slot]
-	return {"active": active_slots[slot], "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time, "double_speed": p.double_speed_time}
+	return {"active": active_slots[slot], "character": p.character_id, "position": p.global_position, "velocity": p.velocity, "crouched": p.crouched, "item": p.equipped_spawn_item, "invisibility": p.invisibility_time_remaining, "magnet": p.get_magnet_time(), "cooldown": p.quick_item_cooldown_remaining, "stun": p.stun_time_remaining, "slippery": p.slippery_time_remaining, "facing": p.body_mesh.rotation.y, "held": String(p.held_chair.name) if is_instance_valid(p.held_chair) else "", "ack": p.simulated_sequence, "motion_epoch": p.motion_epoch, "chase_charge": p.chase_charge, "boost_time": p.boost_time, "buddy_hide": p.buddy_hide_time, "double_speed": p.double_speed_time}
 
 
 func _broadcast_snapshot(reliable_state := false) -> void:
@@ -857,6 +861,7 @@ func _receive_player_state(slot: int, state: Dictionary, epoch: int, sequence: i
 	last_player_sequences[slot] = sequence
 	active_slots[slot] = state.active
 	var p := players[slot]
+	p.set_character_skin(StringName(state.get("character", "sockling")))
 	p.set_slot_active(state.active, true)
 	p.client_predicted = slot == local_slot
 	p.network_controlled = slot == local_slot
@@ -1139,6 +1144,7 @@ func _prepare_session() -> void:
 	_reset_input_tracking()
 	for slot in MAX_PLAYERS:
 		_cleanup_slot(slot)
+		players[slot].set_character_skin(preferred_character if slot == 0 else &"sockling")
 		players[slot].simulation_enabled = false
 		players[slot].name_label.text = "P%d" % (slot + 1)
 	active_slots = [true, false, false, false]
@@ -1240,20 +1246,70 @@ func _start_hosted_game() -> void:
 func _broadcast_roster() -> void:
 	roster_sequence += 1
 	if not multiplayer.get_peers().is_empty():
-		_receive_roster.rpc(active_slots, roster_sequence)
+		var characters: Array = []
+		for player in players: characters.append(player.character_id)
+		_receive_roster.rpc(active_slots, roster_sequence, characters)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_roster(slots: Array, sequence: int) -> void:
+func _receive_roster(slots: Array, sequence: int, characters: Array = []) -> void:
 	if session_mode != &"client" or round_epoch > 0 or sequence <= received_roster_sequence:
 		return
 	received_roster_sequence = sequence
 	active_slots.assign(slots)
+	for slot in MAX_PLAYERS:
+		players[slot].set_character_skin(StringName(characters[slot]) if slot < characters.size() else &"sockling")
 	waiting_for_start = true
 	lobby.visible = true
 	camera.set_gameplay_input_enabled(false)
 	get_tree().paused = true
 	lobby_status.text = "You're connected. Anyone at the table can start once everyone is here."
+
+
+func _character_settings_enabled() -> bool:
+	# Automated fixtures must neither inherit nor overwrite a real player's choice.
+	return not OS.get_cmdline_user_args().has("--ati-test-instance") and not OS.get_cmdline_args().has("--script")
+
+
+func _load_character_preference() -> void:
+	if not _character_settings_enabled(): return
+	var settings := ConfigFile.new()
+	if settings.load("user://character.cfg") == OK:
+		preferred_character = CHARACTER_CATALOG.sanitize(StringName(settings.get_value("appearance", "character", "sockling")))
+
+
+func can_choose_character() -> bool:
+	return not instance_blocked and connection_started_ms == 0 and round_epoch == 0 and (session_mode in [&"lobby", &"hosting"] or (session_mode == &"client" and waiting_for_start))
+
+
+func choose_character(id: StringName) -> void:
+	if not can_choose_character() or not CHARACTER_CATALOG.valid(id): return
+	preferred_character = id
+	if _character_settings_enabled():
+		var settings := ConfigFile.new()
+		settings.set_value("appearance", "character", id)
+		settings.save("user://character.cfg")
+	players[local_slot].set_character_skin(id)
+	if session_mode == &"client":
+		_request_character.rpc_id(1, id)
+	elif session_mode == &"hosting":
+		_broadcast_roster()
+
+
+@rpc("any_peer", "call_remote", "reliable", 0)
+func _request_character(id: StringName) -> void:
+	_apply_peer_character(multiplayer.get_remote_sender_id(), id)
+
+
+func _apply_peer_character(peer_id: int, id: StringName) -> bool:
+	# The sender owns exactly one admitted slot; clients never supply a slot number.
+	if not multiplayer.is_server() or session_mode != &"hosting" or round_epoch != 0 or not peer_to_slot.has(peer_id) or not CHARACTER_CATALOG.valid(id):
+		return false
+	var slot := int(peer_to_slot[peer_id])
+	if slot < 1 or slot >= MAX_PLAYERS or not active_slots[slot]: return false
+	players[slot].set_character_skin(id)
+	_broadcast_roster()
+	return true
 
 
 func _setup_menu() -> void:

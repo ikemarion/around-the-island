@@ -17,6 +17,7 @@ var body: BoxContainer
 var aside: VBoxContainer
 var theme_resource: Theme
 var direct_test: CheckButton
+var character_choice: OptionButton
 
 func build(main: Node, existing: Dictionary) -> void:
 	game = main
@@ -82,9 +83,11 @@ func build(main: Node, existing: Dictionary) -> void:
 		contents.add_child(portrait)
 		var name_label := _label(contents, "", 17)
 		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var character_label := _label(contents, "", 13)
+		character_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var role := _label(contents, "", 13)
 		role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		seats.append({"portrait": portrait, "name": name_label, "role": role})
+		seats.append({"portrait": portrait, "name": name_label, "character": character_label, "role": role})
 	_line(table)
 	_take("Progress", table)
 	controls.Progress.add_theme_color_override("font_color", INK)
@@ -101,6 +104,15 @@ func build(main: Node, existing: Dictionary) -> void:
 	room_heading = _label(aside, "", 27)
 	room_hint = _label(aside, "", 14)
 	room_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_label(aside, "Your character", 15)
+	character_choice = OptionButton.new()
+	character_choice.name = "CharacterChoice"
+	character_choice.custom_minimum_size.y = 44
+	character_choice.add_item("Sockling · knitted mischief")
+	character_choice.add_item("Looper · soft velvet loops")
+	aside.add_child(character_choice)
+	character_choice.item_selected.connect(func(index: int):
+		game.choose_character(game.CHARACTER_CATALOG.IDS[index]))
 	home_actions = VBoxContainer.new()
 	home_actions.add_theme_constant_override("separation", 10)
 	aside.add_child(home_actions)
@@ -146,6 +158,9 @@ func refresh() -> void:
 	var busy: bool = game.connection_started_ms != 0
 	var hosting: bool = game.session_mode == &"hosting"
 	var count: int = game.active_slots.count(true)
+	character_choice.disabled = not game.can_choose_character()
+	character_choice.select(game.CHARACTER_CATALOG.IDS.find(game.preferred_character))
+	character_choice.tooltip_text = "Choose before the match starts. Both characters play identically."
 	home_actions.visible = home
 	room_actions.visible = not home
 	controls.CodeInput.visible = direct_test.button_pressed
@@ -176,8 +191,11 @@ func refresh() -> void:
 	count_label.text = "Room for four" if home or game.session_mode == &"joining" else "%d / 4 seats filled" % count
 	for slot in 4:
 		var active: bool = (slot == 0) if home or game.session_mode == &"joining" else game.active_slots[slot]
-		seats[slot].portrait.configure(active, game.PLAYER_COLORS[slot])
+		var character_id: StringName = game.preferred_character if (home or game.session_mode == &"joining") and slot == 0 else game.players[slot].character_id
+		seats[slot].portrait.configure(active, game.CHARACTER_CATALOG.color_for(character_id, slot))
 		seats[slot].name.text = ("You" if slot == game.local_slot else "Player %d" % (slot + 1)) if active else "Empty seat"
+		seats[slot].character.text = game.CHARACTER_CATALOG.display_name(character_id) if active else ""
+		seats[slot].character.visible = active
 		seats[slot].role.text = ("Not connected" if home or game.session_mode == &"joining" else ("Host" if slot == 0 else "Connected")) if active else "Room for a friend"
 	var width: float = game.get_viewport().get_visible_rect().size.x
 	grid.columns = 4

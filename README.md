@@ -4,7 +4,9 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play the current Windows build
 
-Download [ATI v0.57 for Windows](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.57-Windows.zip), extract it, and run the included ATI executable. Protocol 16. New in v0.57: Decoy Double copies the activating player's full-size Sockling skin and color, including the current sculpt and arm rig, instead of spawning the pickup doll. The independent copy faces its escape direction and animates as it moves on both host and clients. The real player's four-second invisibility and visible footsteps are unchanged. [Actual game capture and notes](docs/art/decoy-double/v057/README.md).
+The current local package is [ATI v0.58 for Windows](releases/ATI-v0.58-Windows.zip). Extract it and run the included ATI executable. GitHub upload remains paused; the [v0.58 GitHub download](https://github.com/ikemarion/around-the-island/raw/refs/heads/main/releases/ATI-v0.58-Windows.zip) will become available after this update is published. **All players need v0.58 (protocol 17).** New: choose **Looper** or **Sockling** from **Your character** in the lobby before the match starts. Loopers have a soft purple velvet body, an open plush head loop, sleepy sideways eyes, a small smirk, rounded mittens and cream ankle cuffs. Both characters play identically. Choices are saved locally and replicated to other players; Decoy Double copies either character and its color. [Reference comparison, actual Godot views and animation](docs/art/loopers/v058/README.md).
+
+Decoy Double still gives its user four seconds of invisibility with visible footsteps; the copy remains visible and animates independently. The pickup icon and ability rules are unchanged.
 
 Includes v0.56's relaxed, tapered Sockling arms and softer mitten hands, with articulated elbows, trailing wrists, smoother opposite arm swings, forward carrying poses and quieter body/landing motion. [Native Godot animation preview and notes](docs/art/socklings/v056/README.md).
 

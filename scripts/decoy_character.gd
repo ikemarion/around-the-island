@@ -1,7 +1,7 @@
 extends Node3D
 ## Independent presentation for a moving decoy. Runs on host and replicas even
 ## when the parent effect's simulation is disabled on the joining player's PC.
-const CHARACTER := preload("res://scripts/sockling_art.gd")
+var character_id: StringName = &"sockling"
 var skin_color := Color.WHITE
 var model: Node3D
 var body: CharacterBody3D
@@ -15,8 +15,7 @@ func _ready() -> void:
 	name = "DecoyCharacter"
 	position.y = 0.85 # Same standing BodyMesh height and unit scale as players.
 	body = get_parent() as CharacterBody3D
-	model = CHARACTER.new()
-	model.preview_color = skin_color
+	model = load("res://scripts/character_catalog.gd").create(character_id, null, skin_color)
 	model.animation_enabled = false
 	add_child(model)
 	sample_anchor = body.global_position

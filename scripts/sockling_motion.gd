@@ -208,10 +208,13 @@ func _step(delta: float, measured_speed: float, holding: bool, airborne: bool, s
 		var planted := SOLE_Y-foot_bottom(i,leg.basis,flex)+lift
 		leg.position.y = lerpf(planted,-0.40+rise*0.02,air)
 		pose_arm(i, dt, run, rise, landing_pulse)
-	var mouth := clampf(0.12+run*gait*0.2+air*0.28+stun*0.18+sin(clock*3.5)*0.035,0,0.85)
-	mouth = lerpf(model.sculpt_body.get_blend_shape_value(0),mouth,blend)
-	model.sculpt_body.set_blend_shape_value(0,mouth)
-	model.jaw.rotation.x = mouth*0.24
+	# The shared soft-body locomotion also serves closed-mouth characters.
+	# Preserve Sockling's jaw while allowing Looper's quiet stitched smirk.
+	if model.sculpt_body.mesh.get_blend_shape_count() > 0 and is_instance_valid(model.jaw):
+		var mouth := clampf(0.12+run*gait*0.2+air*0.28+stun*0.18+sin(clock*3.5)*0.035,0,0.85)
+		mouth = lerpf(model.sculpt_body.get_blend_shape_value(0),mouth,blend)
+		model.sculpt_body.set_blend_shape_value(0,mouth)
+		model.jaw.rotation.x = mouth*0.24
 	# Deterministic staggered blinks; no gameplay RNG consumed.
 	var blink_clock := fposmod(clock+model.blink_offset,4.1)
 	var blink := sin(clampf(blink_clock/0.15,0,1)*PI) if blink_clock < 0.15 else 0.0

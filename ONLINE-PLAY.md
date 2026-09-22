@@ -1,6 +1,8 @@
-# ATI online play — v0.53 (protocol 16)
+# ATI online play — v0.58 (protocol 17)
 
-v0.53 refines the Sockling proportions, face, hands, cuff and fleece against the approved concept while preserving walk/run, jump/landing, carry, crouch/slide, idle and stun animation. Remote airborne poses use a short local support query because replicas do not run movement physics. Visual state resets on teleports and visibility changes; no animation RPCs, movement delay, collision changes or protocol changes. The five-second 2× Speed sneaker pickup (Q / right bumper) remains synchronized by the host. It does not stack with the charged chaser boost. The buddy hides its user for four seconds while the decoy remains visible. Other players see fading footprints when the user moves on the ground. This is independent of regular invisibility. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings. Everyone should use v0.53 for matching visuals (protocol 16).
+Everyone must use **v0.58 (protocol 17)**. Choose **Sockling** or **Looper** under **Your character** before starting the match. Both play identically; the choice is saved on your PC and shared with the other players. Decoy Double copies your selected character and its color. Character selection locks once the match begins. This update does not change movement, hitboxes, scoring or power-up rules.
+
+The five-second 2× Speed sneaker pickup (Q / right bumper) remains synchronized by the host. It does not stack with the charged chaser boost. The buddy hides its user for four seconds while the decoy remains visible. Other players see fading footprints when the user moves on the ground. This is independent of regular invisibility. The charged chaser burst remains: recharge for eight seconds, then press F / left bumper for five seconds at 80% extra running speed. A small lightning meter shows charge/burst time. Charge is retained while idle, cannot refill during a burst, and resets on spark transfer, respawn or restart. The 7% carrier slowdown stays. Redesigned emergency doors spawn near a clear outer border and across the map, with inward landings.
 
 ## Direct route comparison
 
@@ -8,7 +10,7 @@ Host uses Host lobby as usual (listens on UDP 27888). Friend enables Direct conn
 
 v0.42 sends newest saved reports first. Connection logs distinguish default_tunnel from custom_address, without recording the custom IP.
 
-Everyone must update to v0.41. Joining automatically shares previously unsent ATI JSON diagnostic reports with the configured host; no other files are sent. Connection reports opens the network-logs folder: reports contains your own files, received contains reports uploaded by friends. Interrupted transfers retry on the next join. The final disconnect report cannot arrive until the player reconnects.
+Joining automatically shares previously unsent ATI JSON diagnostic reports with the configured host; no other files are sent. Connection reports opens the network-logs folder: reports contains your own files, received contains reports uploaded by friends. Interrupted transfers retry on the next join. The final disconnect report cannot arrive until the player reconnects.
 
 Uploads use 800-byte acknowledged chunks, at most four chunks/second per player, 256 KiB per report, 2 MiB of received chunks per connection, and a 50 MiB host inbox cap. Oversized reports stay local; a full inbox requires the host to archive reports manually. Receipt hashes prevent duplicates. There is no GitHub or third-party upload.
 
@@ -16,9 +18,9 @@ v0.40 adds one-second ENet transport statistics and snapshot-silence timing to a
 
 v0.39 introduced local diagnostic reports on disconnect/session exit; v0.41 adds the automatic sharing described above.
 
-Update everyone to v0.38 for post-match free movement and confetti/winner announcements. Scores freeze at the buzzer; the host can restart when ready. Older clients do not support post-match movement.
+Post-match free movement and confetti/winner announcements remain. Scores freeze at the buzzer; the host can restart when ready.
 
-Use v0.37 for the latest visuals: ceramic floating score shelves, a gold spark vignette and a local-only invisibility shimmer. Gameplay keybind overlays and obstacle instructions are hidden. Protocol 11 and the v0.35 connection logging and reduced obstacle traffic are unchanged. See NETWORK-RELIABILITY.md for log locations and the next remote-test procedure.
+Score Ribbons display scores and remaining time; the gold spark vignette and local-only invisibility shimmer remain. Gameplay keybind overlays and obstacle instructions are hidden. See NETWORK-RELIABILITY.md for log locations and the next remote-test procedure.
 
 ## One host window, one lobby
 
@@ -45,11 +47,11 @@ Normal ATI launches hold a loopback TCP window lock on port 27887. A second wind
 - A 15-second timeout means the room could be offline, full or unreachable; the message does not pretend to distinguish these cases.
 - Start requests show Starting and allow retry after five seconds without a response.
 - Maximum four players, including the host. A fifth player is not admitted.
-- Everyone must use v0.28. Older builds use a different map and are rejected when joining.
+- Everyone must use v0.58. Older protocol versions are rejected when joining.
 
 ## Current online-play caveat
 
-An earlier Windows build completed a real friend playtest and the lobby flow worked. That playtest also exposed severe latency followed by near-simultaneous guest disconnects. The cause has not yet been isolated between the game, the host connection and the Playit route. v0.28 expands the map; remote Internet latency still needs another friend playtest.
+An earlier Windows build completed a real friend playtest and the lobby flow worked. That playtest also exposed severe latency followed by near-simultaneous guest disconnects. The cause has not yet been isolated between the game, the host connection and the Playit route. The v0.58 character selection, mixed-character decoys and reconnect flow pass two-process localhost tests; these do not establish remote Internet or tunnel reliability.
 
 ## Developer testing
 
