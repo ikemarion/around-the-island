@@ -47,4 +47,4 @@ The final garage contains 223 drawable mesh instances and 240,060 triangles befo
 
 Final verification on September 22, 2026: **65/65 automated test processes passed** (source suite, including paired localhost multiplayer tests). Six views were also rendered from the exported v0.62 player resource pack in an isolated directory, with test/reference-file exclusions checked; the standalone Windows executable passed a separate startup check with exit code 0 and no errors. The after images above come from that exported pack. Ignored local verification logs are in `build/test-results/20260922-191304-005-32672/` and `build/garage-pack.*.log`.
 
-Local screenshots establish the appearance on the tested Windows/OpenGL renderer, not a minimum-spec or Internet performance guarantee. GitHub publishing remains paused; v0.62 is packaged locally.
+Local screenshots establish the appearance on the tested Windows/OpenGL renderer, not a minimum-spec or Internet performance guarantee. Initially packaged locally on September 22, v0.62 was [published to GitHub](https://github.com/ikemarion/around-the-island/releases/tag/v0.62.0) on September 25, 2026 at the user's request.

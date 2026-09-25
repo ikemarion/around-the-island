@@ -4,7 +4,7 @@ A chaotic first-person chase game for up to four friends, built with Godot. Stea
 
 ## Play
 
-The current local package is **ATI v0.62 for Windows**: [ATI-v0.62-Windows.zip](releases/ATI-v0.62-Windows.zip). Extract the whole folder and run `ATI-v0.62.exe`. GitHub publishing remains paused; this local package is not a new published download. Use v0.62 on everyone's PC for matching visuals and all fixes. The wire protocol remains 17.
+The current release is **ATI v0.62 for Windows**: [download ATI-v0.62-Windows.zip](https://github.com/ikemarion/around-the-island/releases/download/v0.62.0/ATI-v0.62-Windows.zip). Extract the whole folder and run `ATI-v0.62.exe`; Godot is not required. [Release notes and checksum](https://github.com/ikemarion/around-the-island/releases/tag/v0.62.0). Use v0.62 on everyone's PC for matching visuals and all fixes. The wire protocol remains 17.
 
 - The configured host opens **Host lobby** and keeps Playit running.
 - Friends open the same build and choose **Join lobby**. No codes or networking software are needed on their PCs.
@@ -71,6 +71,6 @@ The source map:
 
 ## Release hygiene
 
-Keep future ZIPs as local build outputs or GitHub Release assets, not source-history additions. Existing tracked releases are retained; no history is rewritten by this cleanup. Publishing remains paused until explicitly resumed.
+Keep future ZIPs as local build outputs or GitHub Release assets, not source-history additions. Existing tracked releases are retained; no history is rewritten by this cleanup. The user requested this v0.62 publication on September 25, 2026; future automatic publishing remains paused. The release targets verified game commit `054709d`; later publishing-documentation commits do not change that executable.
 
 Earlier design decisions and prototype changes are preserved in [historical README notes](docs/history/README-through-v060.md) and [historical network notes](docs/history/NETWORK-through-v060.md). Their old version-specific instructions are not the current playbook.
